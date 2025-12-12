@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from helm.common.media_object import MultimediaObject
 from helm.common.image_generation_parameters import ImageGenerationParameters
@@ -58,14 +58,20 @@ class Request:
     frequency_penalty: float = 0
     """Penalizes tokens proportionally to how often they already appeared, discouraging frequent repeats"""
 
-    repetition_penalty: float = 0
-    """Penalizes tokens simply for having appeared before, encouraging introducing new tokens"""
+    repetition_penalty: float = 1.0
+    """Penalize tokens based on whether they appeared (binary, scales with original probability).
+    Default 1.0 means no penalty. Values >1.0 discourage repetition, <1.0 encourage it."""
 
-    top_a: Optional[float] = 0
-    """Dynamically filters to tokens with “sufficiently high” probability based on the max-prob token"""
+    top_a: float = 0.0
+    """Adaptive top-token filtering based on the probability of the most likely token.
+    Default 0.0 disables this filter."""
     
-    min_p: Optional[float] = 0
-    """Filters out tokens whose probability is too small relative to the most likely token (local min threshold)"""
+    min_p: float = 0.0
+    """Minimum probability threshold relative to the most likely token.
+    Default 0.0 disables this filter."""
+    
+    seed: Optional[int] = None
+    """Deterministic sampling seed (integer). For reproducible outputs when supported by the provider."""
     
     random: Optional[str] = None
     """Used to control randomness. Expect different responses for the same
@@ -85,7 +91,7 @@ class Request:
     response_format: Optional[ResponseFormat] = None
     """EXPERIMENTAL: Response format. Currently only supported by OpenAI, Together, and OpenRouter."""
 
-    tool_choice: Optional[str] = None
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = None
     """Controls which (if any) tool is called by the model.
     'none': model will not call any tool and instead generates a message
     'auto': model can pick between generating a message or calling tools
@@ -105,11 +111,13 @@ class Request:
     top_logprobs: Optional[int] = None
     """Requests the top N candidate tokens and their log probabilities at each generated position"""
     
-    structured_outputs: bool = True
-    """If the model can return structured outputs using response_format json_schema."""
+    structured_outputs: bool = False
+    """If the model can return structured outputs using response_format json_schema.
+    Default False since most models don't support this."""
 
-    logit_bias: Optional[Dict[str, float]] = None
-    """ Accepts a JSON object that maps tokens (specified by their token ID in the tokenizer)"""
+    logit_bias: Optional[Dict[int, float]] = None
+    """Maps token IDs (integers) to bias values from -100 to 100.
+    Positive values increase likelihood, negative decrease. Extreme values (-100/100) ban or force tokens."""
 
     logprobs: bool = False
     """ Toggles whether to include log probabilities for each generated output token in the response"""
