@@ -4,7 +4,6 @@ use glm-4.5-air as judge
 read each answer, and extract the chosen trait
 """
 
-
 import os, argparse, torch as t
 import dill as pickle
 from datasets import load_from_disk
@@ -12,12 +11,11 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from character.constants import DATA_PATH, MODEL_PATH
 from character.utils import gen_args
-p
 
 system = """\
 The assistant is {NAME}. {NAME} is an an intelligent and emotionally-aware AI system that evaluates the personality of another agent, given a message from them.
 {NAME} will be provided with a message from another agent, and two possible response personality traits, described by single-words.
-{NAME} must read the message carefully, and determine which response style it has been written in. A choice must be made, "neither" is not a valid choice.
+{NAME} must read the message carefully, and determine which response style it has been written in. A choice must be made; "neither" is not a valid choice.
 {NAME} will provide a final answer between <answer></answer> tags."""
 
 question = """\
