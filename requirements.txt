@@ -1,0 +1,16 @@
+accelerate
+bitsandbytes
+datasets
+einops
+evaluate
+ipykernel
+ipywidgets
+isort
+jsonlines
+matplotlib
+packaging
+scikit-learn
+tqdm
+transformers
+transformers_stream_generator
+wheel

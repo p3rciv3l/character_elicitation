@@ -1,0 +1,15 @@
+
+.env
+archive/
+character/constants.py
+character/sandbox.ipynb
+character/wandb
+character/repl
+clients/
+data/
+figures/
+.git.backup
+prod_env/
+*/__pycache__
+scripts/logs
+OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTIONAL AI.pdf

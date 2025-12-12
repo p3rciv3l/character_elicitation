@@ -1,0 +1,6 @@
+[submodule "openrlhf"]
+	path = archive/training/openrlhf
+	url = git@github.com:maiush/OpenRLHF.git
+[submodule "repeng"]
+	path = archive/training/repeng
+	url = git@github.com:maiush/repeng.git
