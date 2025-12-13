@@ -8,11 +8,9 @@ from helm.tokenizers.tokenizer import Tokenizer
 
 
 class OpenRouterClient(OpenAIClient):
-    # provider routing config
     DEFAULT_PROVIDER_CONFIG: Dict[str, Any] = {
         # only route to providers that support all params in the request
         "require_parameters": True,
-        # only allow high-quality quantizations
         "quantizations": ["fp8", "fp16", "bf16"],
     }
 
@@ -60,14 +58,12 @@ class OpenRouterClient(OpenAIClient):
         if request.seed is not None:
             raw_request["seed"] = request.seed
 
-        # log probabilities
         if request.logprobs:
             raw_request["logprobs"] = True
 
         if request.top_logprobs is not None:
             raw_request["top_logprobs"] = request.top_logprobs
 
-        # logit bias
         if request.logit_bias:
             raw_request["logit_bias"] = request.logit_bias
 
@@ -85,35 +81,28 @@ class OpenRouterClient(OpenAIClient):
 
         extra: Dict[str, Any] = {}
 
-        # repetition penalty
         if request.repetition_penalty != 1.0:
             extra["repetition_penalty"] = request.repetition_penalty
 
-        # min-p
         if request.min_p > 0.0:
             extra["min_p"] = request.min_p
 
-        # top-a
         if request.top_a > 0.0:
             extra["top_a"] = request.top_a
 
-        # top-k
         if request.top_k_per_token > 0:
             extra["top_k"] = request.top_k_per_token
 
-        # verbosity
         if request.verbosity != "medium":
             extra["verbosity"] = request.verbosity
 
-        # Structured outputs works with response_format json_schema
-        # Note: For full structured outputs, also set request.response_format with a json_schema
-        # See: https://openrouter.ai/docs/guides/features/structured-outputs
+        # structured outputs works with response_format json_schema
+        # see: https://openrouter.ai/docs/guides/features/structured-outputs
         if request.structured_outputs:
             extra["structured_outputs"] = True
 
         # provider routing config
-        # https://openrouter.ai/docs/guides/routing/provider-selection
-        # start with defaults, then merge explicit config (explicit overrides defaults)
+        # see: https://openrouter.ai/docs/guides/routing/provider-selection
         provider_config = {**self.DEFAULT_PROVIDER_CONFIG}
         if self.provider:
             provider_config.update(self.provider)
