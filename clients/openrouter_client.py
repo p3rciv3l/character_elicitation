@@ -2,7 +2,6 @@ import os
 from typing import Any, Dict, Optional
 
 from helm.clients.openai_client import OpenAIClient
-from helm.common.cache import CacheConfig
 from helm.common.request import Request
 from helm.tokenizers.tokenizer import Tokenizer
 
@@ -18,7 +17,6 @@ class OpenRouterClient(OpenAIClient):
         self,
         tokenizer_name: str,
         tokenizer: Tokenizer,
-        cache_config: CacheConfig,
         api_key: Optional[str] = None,
         model_name: Optional[str] = None,
         output_processor: Optional[str] = None,
@@ -30,7 +28,6 @@ class OpenRouterClient(OpenAIClient):
         super().__init__(
             tokenizer,
             tokenizer_name,
-            cache_config=cache_config,
             output_processor=output_processor,
             base_url=self.base_url,
             api_key=self.api_key,
@@ -55,6 +52,8 @@ class OpenRouterClient(OpenAIClient):
         # base OpenAI-compatible payload from parent
         raw_request = super()._make_chat_raw_request(request)
 
+        raw_request["model"] = self._get_model_for_request(request)
+
         if request.seed is not None:
             raw_request["seed"] = request.seed
 
@@ -75,9 +74,7 @@ class OpenRouterClient(OpenAIClient):
             if request.tool_choice is not None:
                 raw_request["tool_choice"] = request.tool_choice
 
-            # Tri-state: None = use provider default, True/False = explicit
-            if request.parallel_tool_calls is not None:
-                raw_request["parallel_tool_calls"] = request.parallel_tool_calls
+            raw_request["parallel_tool_calls"] = request.parallel_tool_calls
 
         extra: Dict[str, Any] = {}
 
