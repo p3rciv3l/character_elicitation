@@ -1,0 +1,141 @@
+model_deployments:
+
+  # OpenAI
+  - name: openai/gpt-5.2
+    model_name: openai/gpt-5.2
+    tokenizer_name: openai/o200k_base
+    # https://platform.openai.com/docs/models/gpt-5.2
+    max_sequence_length: 400000
+    client_spec:
+      class_name: "helm.clients.openai_responses_client.OpenAIResponseClient"
+      args:
+        seed: 42069
+
+  # Anthropic
+  - name: anthropic/claude-sonnet-4-5
+    model_name: anthropic/claude-sonnet-4-5
+    tokenizer_name: anthropic/claude
+    # https://www.anthropic.com/claude/sonnet
+    max_sequence_length: 200000
+    max_sequence_and_generated_tokens_length: 9016
+    client_spec:
+      class_name: "helm.clients.anthropic_client.AnthropicClient"
+      args:
+        seed: 42069
+
+  # xAI
+  - name: xai/grok-4-1-fast-reasoning
+    model_name: xai/grok-4-1-fast-reasoning
+    tokenizer_name: xai/grok-3-beta
+    # https://x.ai/news/grok-4-1-fast
+    max_sequence_length: 2000000
+    client_spec:
+      class_name: "helm.clients.grok_client.GrokChatClient"
+      args:
+        seed: 42069
+    window_service_spec:
+      class_name: "helm.benchmark.window_services.no_decoding_window_service.NoDecodingWindowService"
+
+  # Google
+  - name: google/gemini-3-pro-preview
+    model_name: google/gemini-3-pro-preview
+    tokenizer_name: google/gemma-2b  # Gemini has no tokenizer endpoint, so we approximate by using Gemma's tokenizer.
+    max_sequence_length: 1048576  # Source: https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro
+    # TODO: Max output tokens: 65536
+    client_spec:
+      class_name: "helm.clients.google_genai_client.GoogleGenAIClient"
+      args:
+        seed: 42069
+        thinking_config:
+          include_thoughts: true
+
+  # Mistral
+  - name: mistralai/magistral-small-latest
+    model_name: mistralai/magistral-small-latest
+    tokenizer_name: mistralai/Ministral-8B-Instruct-2410
+    # https://huggingface.co/mistralai/Magistral-Small-2509
+    max_sequence_length: 128000
+    client_spec:
+      class_name: "helm.clients.mistral_client.MistralAIClient"
+      args:
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.95
+        max_tokens: 131072
+
+
+  # Alibaba
+  - name: openrouter/qwen-max
+    model_name: qwen/qwen-max
+    tokenizer_name: qwen/qwen2.5-7b-instruct
+    max_sequence_length: 32768
+    client_spec:
+      class_name: "helm.clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: qwen/qwen-max
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.8
+        top_k: 20
+        repetition_penalty: 1.0
+        presence_penalty: 1.5
+
+        provider:
+          require_parameters: true
+
+  # Moonshot
+  - name: openrouter/kimi-k2-thinking
+    model_name: moonshotai/kimi-k2-thinking
+    tokenizer_name: moonshotai/kimi-k2-thinking
+    max_sequence_length: 131072
+    client_spec:
+      class_name: "helm.clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: moonshotai/kimi-k2-thinking
+        seed: 42069
+        temperature: 1.0
+        max_tokens: 4096
+
+  # DeepSeek
+  - name: openrouter/deepseek/deepseek-v3.2
+    model_name: deepseek/deepseek-v3.2
+    tokenizer_name: mistralai/Mistral-7B-v0.1
+    max_sequence_length: 163800
+    client_spec:
+      class_name: "helm.clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: deepseek/deepseek-v3.2
+        seed: 42069
+        temperature: 1.0
+        top_p: 0.95
+
+  # Arcee
+  - name: openrouter/trinity-mini:free
+    model_name: arcee-ai/trinity-mini:free
+    # tokenizer only useful for cost calucations (not inference) and so we are not changing this as it would require a lot of configuration
+    tokenizer_name: mistralai/Mistral-7B-v0.1
+    # https://openrouter.ai/arcee-ai/trinity-mini:free
+    max_sequence_length: 131000
+    client_spec:
+      class_name: "helm.clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: arcee-ai/trinity-mini:free
+        seed: 42069
+        temperature: 0.15
+        top_p: 0.75
+        top_k: 50
+        min_p: 0.06
+
+  # Z.AI
+  # https://docs.z.ai/guides/develop/openai/python?
+  - name: openrouter/glm-4.5-air:free
+    model_name: z-ai/glm-4.5-air:free
+    tokenizer_name: z-ai/glm-4.5-air:free
+    max_sequence_length: 131072
+    client_spec:
+      class_name: "helm.clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: z-ai/glm-4.5-air:free
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.8
