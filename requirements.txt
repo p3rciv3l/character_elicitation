@@ -14,3 +14,8 @@ tqdm
 transformers
 transformers_stream_generator
 wheel
+
+# HELM - install from local checkout in editable mode:
+#   pip install -e ../helm
+# Or from PyPI:
+#   pip install crfm-helm
