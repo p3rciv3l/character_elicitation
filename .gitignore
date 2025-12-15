@@ -1,5 +1,7 @@
 
 .env
+.venv/
+venv/
 archive/
 character/constants.py
 character/sandbox.ipynb
@@ -10,6 +12,8 @@ figures/
 .git.backup
 prod_env/*
 !prod_env/model_deployments.yaml
+!model_metadata.yaml
+
 */__pycache__
 scripts/logs
 OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTIONAL AI.pdf
