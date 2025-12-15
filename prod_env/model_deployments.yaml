@@ -1,67 +1,77 @@
-model_deployments:
+# model-specific specifications
+# :floor gets the lowest price for a model (sacrifices uptime)
 
   # OpenAI
-  - name: openai/gpt-5.2
-    model_name: openai/gpt-5.2
+  - name: openrouter/gpt-5.1
+    model_name: openai/gpt-5.1:floor
     tokenizer_name: openai/o200k_base
     # https://platform.openai.com/docs/models/gpt-5.2
     max_sequence_length: 400000
     client_spec:
-      class_name: "helm.clients.openai_responses_client.OpenAIResponseClient"
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: openai/gpt-5.1
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.95
 
   # Anthropic
-  - name: anthropic/claude-sonnet-4-5
-    model_name: anthropic/claude-sonnet-4-5
+  - name: openrouter/claude-haiku-4.5
+    model_name: anthropic/claude-haiku-4.5:floor
     tokenizer_name: anthropic/claude
-    # https://www.anthropic.com/claude/sonnet
     max_sequence_length: 200000
     max_sequence_and_generated_tokens_length: 9016
     client_spec:
-      class_name: "helm.clients.anthropic_client.AnthropicClient"
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: anthropic/claude-haiku-4.5
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.95
 
   # xAI
-  - name: xai/grok-4-1-fast-reasoning
-    model_name: xai/grok-4-1-fast-reasoning
+  - name: openrouter/grok-4.1-fast
+    model_name: x-ai/grok-4.1-fast:floor
     tokenizer_name: xai/grok-3-beta
-    # https://x.ai/news/grok-4-1-fast
     max_sequence_length: 2000000
     client_spec:
-      class_name: "helm.clients.grok_client.GrokChatClient"
-    window_service_spec:
-      class_name: "helm.benchmark.window_services.no_decoding_window_service.NoDecodingWindowService"
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: x-ai/grok-4.1-fast
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.95
 
   # Google
-  - name: google/gemini-3-pro-preview
-    model_name: google/gemini-3-pro-preview
-    tokenizer_name: google/gemma-2b  # Gemini has no tokenizer endpoint, so we approximate by using Gemma's tokenizer.
-    # https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro
+  - name: openrouter/gemini-3-pro-preview
+    model_name: google/gemini-3-pro-preview:floor
+    tokenizer_name: google/gemma-2b
     max_sequence_length: 1048576
     client_spec:
-      class_name: "helm.clients.google_genai_client.GoogleGenAIClient"
-        thinking_config:
-          include_thoughts: true
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: google/gemini-3-pro-preview
+        seed: 42069
+        temperature: 0.7
+        top_p: 0.95
 
   # Mistral
-  - name: mistralai/magistral-small-latest
-    model_name: mistralai/magistral-small-latest
+  - name: openrouter/mistral-small-3.2-24b-instruct
+    model_name: mistralai/mistral-small-3.2-24b-instruct
     tokenizer_name: mistralai/Ministral-8B-Instruct-2410
-    # https://huggingface.co/mistralai/Magistral-Small-2509
     max_sequence_length: 128000
     client_spec:
-      class_name: "helm.clients.mistral_client.MistralAIClient"
+      class_name: "clients.openrouter_client.OpenRouterClient"
       args:
+        model_name: mistralai/mistral-small-3.2-24b-instruct
+        seed: 42069
         temperature: 0.7
         top_p: 0.95
         max_tokens: 131072
 
-
-  # =============================================================================
-  # OpenRouter deployments using custom extended client
-  # =============================================================================
-
   # Alibaba
   - name: openrouter/qwen-max
-    model_name: qwen/qwen-max
+    model_name: qwen/qwen-max:floor
     tokenizer_name: qwen/qwen2.5-7b-instruct
     max_sequence_length: 32768
     client_spec:
@@ -104,12 +114,60 @@ model_deployments:
         temperature: 1.0
         top_p: 0.95
 
+# Z-AI Free
+  - name: openrouter/glm-4.5-air
+    model_name: z-ai/glm-4.5-air
+    tokenizer_name: mistralai/Mistral-7B-v0.1
+    # https://openrouter.ai/z-ai/glm-4.5-air
+    max_sequence_length: 131000
+    client_spec:
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: z-ai/glm-4.5-air
+        seed: 42069
+        temperature: 0.15
+        top_p: 0.75
+        top_k: 50
+        min_p: 0.06
+
+  # Z-AI Free
+  - name: openrouter/glm-4.5-air:free
+    model_name: z-ai/glm-4.5-air:free
+    tokenizer_name: mistralai/Mistral-7B-v0.1
+    # https://openrouter.ai/z-ai/glm-4.5-air
+    max_sequence_length: 131000
+    client_spec:
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: z-ai/glm-4.5-air:free
+        seed: 42069
+        temperature: 0.15
+        top_p: 0.75
+        top_k: 50
+        min_p: 0.06
   # Arcee
+  - name: openrouter/trinity-mini
+    model_name: arcee-ai/trinity-mini
+    # tokenizer only useful for cost calucations (not inference) and so we are not changing this as it would require a lot of configuration
+    tokenizer_name: mistralai/Mistral-7B-v0.1
+    # https://openrouter.ai/arcee-ai/trinity-mini
+    max_sequence_length: 131000
+    client_spec:
+      class_name: "clients.openrouter_client.OpenRouterClient"
+      args:
+        model_name: arcee-ai/trinity-mini
+        seed: 42069
+        temperature: 0.15
+        top_p: 0.75
+        top_k: 50
+        min_p: 0.06
+
+  # Arcee Free
   - name: openrouter/trinity-mini:free
     model_name: arcee-ai/trinity-mini:free
     # tokenizer only useful for cost calucations (not inference) and so we are not changing this as it would require a lot of configuration
     tokenizer_name: mistralai/Mistral-7B-v0.1
-    # https://openrouter.ai/arcee-ai/trinity-mini:free
+    # https://openrouter.ai/arcee-ai/trinity-mini
     max_sequence_length: 131000
     client_spec:
       class_name: "clients.openrouter_client.OpenRouterClient"
@@ -120,17 +178,3 @@ model_deployments:
         top_p: 0.75
         top_k: 50
         min_p: 0.06
-
-  # Z.AI
-  # https://docs.z.ai/guides/develop/openai/python?
-  - name: openrouter/glm-4.5-air:free
-    model_name: z-ai/glm-4.5-air:free
-    tokenizer_name: z-ai/glm-4.5-air:free
-    max_sequence_length: 131072
-    client_spec:
-      class_name: "clients.openrouter_client.OpenRouterClient"
-      args:
-        model_name: z-ai/glm-4.5-air:free
-        seed: 42069
-        temperature: 0.7
-        top_p: 0.8
