@@ -3,7 +3,6 @@
 .venv/
 venv/
 archive/
-character/constants.py
 character/sandbox.ipynb
 character/wandb
 character/repl
