@@ -13,7 +13,13 @@ figures/
 prod_env/*
 !prod_env/model_deployments.yaml
 !model_metadata.yaml
-
 */__pycache__
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 scripts/logs
 OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTIONAL AI.pdf
+*.egg-info/
+.pytest_cache/
+*.egg
