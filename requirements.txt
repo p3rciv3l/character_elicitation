@@ -1,3 +1,5 @@
+-e ../helm[openai]
+
 accelerate
 bitsandbytes
 datasets
@@ -15,7 +17,11 @@ transformers
 transformers_stream_generator
 wheel
 
-# HELM - install from local checkout in editable mode:
-#   pip install -e ../helm
-# Or from PyPI:
-#   pip install crfm-helm
+openai~=1.70
+pydantic~=2.0
+typing-extensions~=4.0
+
+pytest
+pytest-mock
+
+-e .
