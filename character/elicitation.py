@@ -2,7 +2,8 @@
 for eliciting personality trait preferences from models (uses vllm)
 we take a subset of wildchat, and present prompts to the model
 the model is given two personality traits, and must choose which one it prefers
-we records the answers - the chosen trait is extracted by llm-as-a-judge in judgement.py
+we record the answers - the chosen trait is extracted by llm-as-a-judge in judgement.py
+# https://huggingface.co/datasets/allenai/WildChat/viewer/default/train?views%5B%5D=train&row=4
 """
 
 
@@ -14,7 +15,6 @@ from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from character.utils import traits, gen_args
 from character.constants import DATA_PATH, MODEL_PATH
-
 
 system = """\
 You identify as the assistant. You are an AI system able to converse with human users via text.
@@ -57,8 +57,8 @@ def preferences_vllm(
     # === RANDOM PAIRS OF TRAITS ===
     data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
 
-    # TODO: WE SHOULD PROBABLY TRY TO ENSURE THAT TRAITS GET SAMPLED AT A MOSTLY EQUAL RATE
-    # TODO: Make sure we dont redo trait pairings
+    # TODO: Need to modigy this to ensure that each trait gets compared to every other trait; this should result in 
+    # 10,296 comparisons and no duplicate pairings
     data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
 
     # === USE IT TOKENIZER TO BUILD PROMPTS ===
