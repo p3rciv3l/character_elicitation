@@ -3,12 +3,7 @@
 .venv/
 venv/
 archive/
-character/sandbox.ipynb
-character/wandb
-character/repl
 data/
-figures/
-.git.backup
 prod_env/*
 !prod_env/model_deployments.yaml
 !model_metadata.yaml
