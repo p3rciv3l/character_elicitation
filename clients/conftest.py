@@ -1,24 +1,17 @@
 """
-Pytest configuration for OpenRouter client tests.
+Pytest configuration.
 
-This conftest.py registers custom models from prod_env/model_metadata.yaml
-with HELM's model metadata registry before tests run.
+Note: OpenRouterClient now uses requests directly instead of the OpenAI SDK,
+so no patching is needed. This file is kept for potential future fixtures.
 """
-import os
-import sys
-from pathlib import Path
+from unittest.mock import MagicMock
+import pytest
 
-# Add parent directory to path to import prod_env
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+# Mock fixture for backward compatibility with unit tests
+_mock_openai_instance = MagicMock()
+_mock_openai_class = MagicMock(return_value=_mock_openai_instance)
 
-# Import HELM's registry
-from helm.benchmark.model_metadata_registry import register_model_metadata_from_path
-
-# Register custom models from prod_env/model_metadata.yaml
-model_metadata_path = project_root / "prod_env" / "model_metadata.yaml"
-if model_metadata_path.exists():
-    register_model_metadata_from_path(str(model_metadata_path))
-    print(f"✓ Registered custom models from {model_metadata_path}")
-else:
-    print(f"⚠ Warning: {model_metadata_path} not found")
+@pytest.fixture
+def mock_openai():
+    """Fixture providing a mocked OpenAI class for backward compatibility."""
+    return _mock_openai_class

@@ -1,8 +1,8 @@
 """
-Custom HELM clients for character elicitation research.
+Standalone OpenRouter client for character elicitation research.
 
-This module provides extended clients for various AI providers with
-additional features and parameter controls.
+This module provides a simple client for OpenRouter's unified AI API with
+built-in defaults and easy parameter overrides.
 """
 
 from clients.openrouter_client import (
@@ -10,6 +10,9 @@ from clients.openrouter_client import (
     OpenRouterDefaults,
     ProviderPreferences,
     DEFAULTS,
+    load_model_deployments,
+    load_model_config,
+    get_model_client,
 )
 
 __all__ = [
@@ -17,4 +20,7 @@ __all__ = [
     "OpenRouterDefaults",
     "ProviderPreferences",
     "DEFAULTS",
+    "load_model_deployments",
+    "load_model_config",
+    "get_model_client",
 ]

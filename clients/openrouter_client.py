@@ -1,9 +1,9 @@
 """
-OpenRouter Client for HELM
+Standalone OpenRouter Client
 
-A comprehensive client for OpenRouter's unified AI API that provides intelligent
-provider routing across multiple model providers. This client extends HELM's
-OpenAI client with full support for OpenRouter-specific parameters and features.
+A simple client for OpenRouter's unified AI API that provides intelligent
+provider routing across multiple model providers with built-in defaults and
+easy parameter overrides.
 
 References:
     - Parameters: https://openrouter.ai/docs/api/reference/parameters
@@ -11,22 +11,42 @@ References:
 """
 
 import os
+from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Literal, Optional, TypedDict
-from typing_extensions import NotRequired
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 
-from helm.clients.client import CachingClient
-from helm.clients.openai_client import OpenAIClient
-from helm.common.cache import CacheConfig
-from helm.common.object_spec import get_class_by_name
-from helm.common.request import Request
-from helm.tokenizers.tokenizer import Tokenizer
+# Note: We use requests directly instead of the OpenAI SDK to avoid import hang issues
+# The OpenAI SDK can hang on import in some environments due to httpx/HTTP2 issues
 
-try:
-    from openai import OpenAI
-except ModuleNotFoundError as e:
-    from helm.common.optional_dependencies import handle_module_not_found_error
-    handle_module_not_found_error(e, ["openai"])
+# Lazy imports to avoid any module-level execution
+_yaml = None
+_requests = None
+
+def _get_yaml():
+    """Lazy import of yaml."""
+    global _yaml
+    if _yaml is None:
+        try:
+            import yaml
+            _yaml = yaml
+        except ImportError:
+            raise ImportError(
+                "pyyaml package is required. Install with: pip install pyyaml"
+            )
+    return _yaml
+
+def _get_requests():
+    """Lazy import of requests."""
+    global _requests
+    if _requests is None:
+        try:
+            import requests
+            _requests = requests
+        except ImportError:
+            raise ImportError(
+                "requests package is required. Install with: pip install requests"
+            )
+    return _requests
 
 
 # =============================================================================
@@ -76,48 +96,6 @@ class ProviderPreferences(TypedDict, total=False):
     """Maximum pricing (e.g., {"prompt": 1.0, "completion": 2.0} for $/M tokens)."""
 
 
-class OpenRouterRawRequest(TypedDict, total=False):
-    """
-    Complete OpenRouter API request structure.
-    
-    Combines OpenAI-compatible parameters with OpenRouter-specific extensions.
-    """
-    # Core request
-    model: str
-    messages: List[Dict[str, Any]]
-    
-    # Sampling parameters (OpenAI-compatible)
-    temperature: float
-    top_p: float
-    max_tokens: int
-    frequency_penalty: float
-    presence_penalty: float
-    stop: List[str]
-    n: int
-    
-    # OpenRouter-specific sampling
-    top_k: int
-    repetition_penalty: float
-    min_p: float
-    top_a: float
-    seed: int
-    
-    # Output control
-    logit_bias: Dict[str, float]
-    logprobs: bool
-    top_logprobs: int
-    response_format: Dict[str, Any]
-    verbosity: Literal["low", "medium", "high"]
-    
-    # Tool use
-    tools: List[Dict[str, Any]]
-    tool_choice: Any
-    parallel_tool_calls: bool
-    
-    # Provider routing
-    provider: ProviderPreferences
-
-
 # =============================================================================
 # Default Configuration
 # =============================================================================
@@ -128,10 +106,7 @@ class OpenRouterDefaults:
     Default parameter values for OpenRouter requests.
     
     These defaults are applied at the client level and can be overridden
-    per-model via model_deployments.yaml configuration.
-    
-    Values align with OpenRouter's API defaults where possible, with sensible
-    customizations for research/evaluation workloads.
+    per-model via model_deployments.yaml configuration or method calls.
     """
     # Sampling parameters
     temperature: float = 1.0
@@ -166,57 +141,36 @@ DEFAULTS = OpenRouterDefaults()
 # OpenRouter Client
 # =============================================================================
 
-class OpenRouterClient(OpenAIClient):
+class OpenRouterClient:
     """
-    HELM client for OpenRouter's unified AI API.
+    Standalone client for OpenRouter's unified AI API.
     
     Provides intelligent routing across multiple AI providers (OpenAI, Anthropic,
     Google, etc.) with support for cost optimization, latency preferences, and
     privacy controls.
     
-    All parameters can be configured via model_deployments.yaml:
-    
-        client_spec:
-          class_name: "clients.openrouter_client.OpenRouterClient"
-          args:
-            model_name: "anthropic/claude-3-opus"
-            temperature: 0.7
-            provider:
-              sort: "throughput"
-              data_collection: "deny"
-    
-    Attributes:
-        model_name: OpenRouter model identifier (e.g., "openai/gpt-4")
-        
     Example:
         >>> client = OpenRouterClient(
-        ...     tokenizer=tokenizer,
-        ...     tokenizer_name="openai/gpt-4",
-        ...     cache_config=cache_config,
-        ...     model_name="openai/gpt-4",
+        ...     model="openai/gpt-4",
+        ...     api_key="sk-...",
         ...     temperature=0.7,
         ...     provider={"sort": "price"},
         ... )
+        >>> response = client.generate([
+        ...     {"role": "user", "content": "Hello!"}
+        ... ])
+        >>> print(response.choices[0].message.content)
     """
     
-    BASE_URL = "https://openrouter.ai/api/v1/"
+    BASE_URL = "https://openrouter.ai/api/v1"
     
     def __init__(
         self,
-        tokenizer_name: str,
-        tokenizer: Tokenizer,
-        cache_config: CacheConfig,
-        # Authentication
+        model: str,
         api_key: Optional[str] = None,
-        # Model identification
-        model_name: Optional[str] = None,
-        output_processor: Optional[str] = None,
-        # HTTP headers (for provider-specific features like Anthropic beta)
         default_headers: Optional[Dict[str, str]] = None,
-        # =================================================================
-        # Sampling Parameters
-        # These override values from Request when specified
-        # =================================================================
+        timeout: Optional[float] = 30.0,
+        # Sampling parameters
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
@@ -225,9 +179,7 @@ class OpenRouterClient(OpenAIClient):
         repetition_penalty: Optional[float] = None,
         min_p: Optional[float] = None,
         top_a: Optional[float] = None,
-        # =================================================================
-        # Generation Control
-        # =================================================================
+        # Generation control
         seed: Optional[int] = None,
         max_tokens: Optional[int] = None,
         logit_bias: Optional[Dict[str, float]] = None,
@@ -236,28 +188,21 @@ class OpenRouterClient(OpenAIClient):
         response_format: Optional[Dict[str, Any]] = None,
         stop: Optional[List[str]] = None,
         verbosity: Optional[Literal["low", "medium", "high"]] = None,
-        # =================================================================
-        # Tool Configuration
-        # =================================================================
+        # Tool configuration
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_choice: Optional[Any] = None,
         parallel_tool_calls: Optional[bool] = None,
-        # =================================================================
-        # Provider Routing
-        # =================================================================
+        # Provider routing
         provider: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize the OpenRouter client.
         
         Args:
-            tokenizer_name: Name of the tokenizer to use
-            tokenizer: Tokenizer instance for token counting
-            cache_config: Cache configuration for request caching
+            model: OpenRouter model identifier (e.g., "openai/gpt-4")
             api_key: OpenRouter API key (defaults to OPENROUTER_API_KEY env var)
-            model_name: Model identifier on OpenRouter (e.g., "anthropic/claude-3-opus")
-            output_processor: Optional function name for post-processing outputs
             default_headers: HTTP headers for all requests (e.g., {"x-anthropic-beta": "..."})
+            timeout: Request timeout in seconds (default: 30.0, None for no timeout)
             
             # Sampling (OpenAI-compatible)
             temperature: Controls randomness (0.0-2.0). Default: 1.0
@@ -297,59 +242,39 @@ class OpenRouterClient(OpenAIClient):
                 "variable or pass api_key parameter."
             )
         
-        # Initialize base caching client (skip OpenAI's __init__ to customize)
-        CachingClient.__init__(self, cache_config=cache_config)
+        # Store model name and HTTP settings
+        self.model = model
+        self.timeout = timeout
+        self.default_headers = default_headers or {}
         
-        # Initialize tokenizer (required by OpenAIClient)
-        self.tokenizer = tokenizer
-        self.tokenizer_name = tokenizer_name
+        # Note: We use requests directly instead of OpenAI SDK to avoid import hangs
+        # This maintains all parameter management logic while ensuring reliability
         
-        # OpenAI client attributes
-        self.openai_model_name = model_name
-        self.reasoning_effort = None
-        self.output_processor: Optional[Callable[[str], str]] = (
-            get_class_by_name(output_processor) if output_processor else None
-        )
-        
-        # Create OpenAI-compatible client pointed at OpenRouter
-        self.client = OpenAI(
-            api_key=self._api_key,
-            base_url=self.BASE_URL,
-            default_headers=default_headers,
-        )
-        
-        # Store model name
-        self.model_name = model_name
-        
-        # Store parameter overrides
-        # Using None to indicate "use default", actual value to override
-        self._params = _ParameterStore(
-            # Sampling
-            temperature=temperature,
-            top_p=top_p,
-            top_k=top_k,
-            frequency_penalty=frequency_penalty,
-            presence_penalty=presence_penalty,
-            repetition_penalty=repetition_penalty,
-            min_p=min_p,
-            top_a=top_a,
-            # Generation
-            seed=seed,
-            max_tokens=max_tokens,
-            logit_bias=logit_bias,
-            logprobs=logprobs,
-            top_logprobs=top_logprobs,
-            response_format=response_format,
-            stop=stop,
-            verbosity=verbosity,
-            # Tools
-            tools=tools,
-            tool_choice=tool_choice,
-            parallel_tool_calls=parallel_tool_calls,
-        )
+        # Store default parameters (None means use default, value means override)
+        self._defaults = {
+            "temperature": temperature,
+            "top_p": top_p,
+            "top_k": top_k,
+            "frequency_penalty": frequency_penalty,
+            "presence_penalty": presence_penalty,
+            "repetition_penalty": repetition_penalty,
+            "min_p": min_p,
+            "top_a": top_a,
+            "seed": seed,
+            "max_tokens": max_tokens,
+            "logit_bias": logit_bias,
+            "logprobs": logprobs,
+            "top_logprobs": top_logprobs,
+            "response_format": response_format,
+            "stop": stop,
+            "verbosity": verbosity,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "parallel_tool_calls": parallel_tool_calls,
+        }
         
         # Build provider configuration with defaults
-        self._provider = self._build_provider_config(provider)
+        self._default_provider = self._build_provider_config(provider)
     
     def _build_provider_config(
         self, 
@@ -357,9 +282,6 @@ class OpenRouterClient(OpenAIClient):
     ) -> Dict[str, Any]:
         """
         Build provider configuration by merging user settings with defaults.
-        
-        Provider routing is a core feature of OpenRouter, so we always include
-        sensible defaults while allowing full customization.
         
         Args:
             user_config: User-provided provider preferences
@@ -376,202 +298,269 @@ class OpenRouterClient(OpenAIClient):
         
         return config
     
-    def _make_chat_raw_request(self, request: Request) -> Dict[str, Any]:
+    def generate(
+        self,
+        messages: List[Dict[str, str]],
+        stream: bool = False,
+        **override_params
+    ):
         """
-        Build the raw request for OpenRouter's chat completion API.
-        
-        This method:
-        1. Gets base request from OpenAI parent (using Request values)
-        2. Applies client-level parameter overrides
-        3. Adds OpenRouter-specific parameters
-        4. Adds provider routing configuration
-        
-        The precedence order is:
-            Client override > Request value > HELM Request default
+        Generate a completion using the OpenRouter API.
         
         Args:
-            request: HELM Request object
+            messages: List of message dicts with "role" and "content" keys
+            stream: Whether to stream the response
+            **override_params: Parameters to override client defaults and YAML config
             
         Returns:
-            Complete request dictionary for OpenRouter API
+            Response dict from OpenRouter API (OpenAI-compatible format)
+            
+        Example:
+            >>> response = client.generate(
+            ...     [{"role": "user", "content": "Hello!"}],
+            ...     temperature=0.8,  # Override default
+            ... )
+            >>> print(response["choices"][0]["message"]["content"])
         """
-        # Get base request from OpenAI parent
-        raw_request = super()._make_chat_raw_request(request)
+        # Build request parameters with precedence:
+        # override_params > client defaults > DEFAULTS
+        params = self._build_request_params(**override_params)
         
-        # Apply parameter overrides and add OpenRouter-specific params
-        self._apply_parameter_overrides(raw_request, request)
+        # Add messages and model
+        params["model"] = self.model
+        params["messages"] = messages
+        params["stream"] = stream
         
-        # Add provider routing (always present)
-        raw_request["provider"] = self._provider
+        # Make API call using requests (avoiding OpenAI SDK import issues)
+        requests = _get_requests()  # Lazy import
         
-        return raw_request
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json",
+            **self.default_headers,
+        }
+        
+        response = requests.post(
+            f"{self.BASE_URL}/chat/completions",
+            headers=headers,
+            json=params,
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+        
+        return response.json()
     
-    def _apply_parameter_overrides(
-        self, 
-        raw_request: Dict[str, Any], 
-        request: Request
-    ) -> None:
+    def _build_request_params(self, **override_params) -> Dict[str, Any]:
         """
-        Apply client-level parameter overrides to the raw request.
-        
-        For each parameter:
-        - If client has an override (not None): use the override
-        - If client override is None: keep the value from parent (Request)
-        - For OpenRouter-specific params: use client value or default
+        Build request parameters applying precedence:
+        override_params > client defaults > DEFAULTS
         
         Args:
-            raw_request: Request dict to modify (mutated in place)
-            request: Original HELM Request for reference
+            **override_params: Parameters from method call
+            
+        Returns:
+            Complete request parameters dictionary
         """
-        p = self._params
+        params = {}
         
-        # =====================================================================
-        # OpenAI-Compatible Parameters (override if client specified)
-        # =====================================================================
+        # Apply defaults first
+        self._apply_defaults(params)
         
-        if p.temperature is not None:
-            raw_request["temperature"] = p.temperature
+        # Apply client-level overrides (only if not None)
+        for key, value in self._defaults.items():
+            if value is not None and key not in override_params:
+                params[key] = value
         
-        if p.top_p is not None:
-            raw_request["top_p"] = p.top_p
+        # Apply method-level overrides (highest precedence)
+        params.update(override_params)
         
-        if p.max_tokens is not None:
-            raw_request["max_tokens"] = p.max_tokens
-        elif raw_request.get("max_tokens") == 100:
-            # Override HELM's low default of 100 with our default of 1000
-            raw_request["max_tokens"] = DEFAULTS.max_tokens
+        # Tool configuration: set parallel_tool_calls default if tools are present
+        # Check after all params are applied (override_params, client defaults, or DEFAULTS)
+        if "tools" in params and params["tools"] is not None and "parallel_tool_calls" not in params:
+            params["parallel_tool_calls"] = DEFAULTS.parallel_tool_calls
         
-        if p.frequency_penalty is not None:
-            raw_request["frequency_penalty"] = p.frequency_penalty
+        # Always include provider config (merge with any override)
+        provider_config = dict(self._default_provider)
+        if "provider" in override_params:
+            provider_config.update(override_params["provider"])
+        params["provider"] = provider_config
         
-        if p.presence_penalty is not None:
-            raw_request["presence_penalty"] = p.presence_penalty
+        # Remove None values (except for explicit overrides)
+        params = {k: v for k, v in params.items() if v is not None}
         
-        if p.stop is not None:
-            raw_request["stop"] = p.stop
+        return params
+    
+    def _apply_defaults(self, params: Dict[str, Any]) -> None:
+        """
+        Apply default values to parameters dict.
         
-        if p.response_format is not None:
-            raw_request["response_format"] = p.response_format
+        Args:
+            params: Parameters dict to modify in place
+        """
+        # Sampling parameters
+        if "temperature" not in params:
+            params["temperature"] = DEFAULTS.temperature
+        if "top_p" not in params:
+            params["top_p"] = DEFAULTS.top_p
+        if "top_k" not in params:
+            params["top_k"] = DEFAULTS.top_k
+        if "frequency_penalty" not in params:
+            params["frequency_penalty"] = DEFAULTS.frequency_penalty
+        if "presence_penalty" not in params:
+            params["presence_penalty"] = DEFAULTS.presence_penalty
+        if "repetition_penalty" not in params:
+            params["repetition_penalty"] = DEFAULTS.repetition_penalty
+        if "min_p" not in params:
+            params["min_p"] = DEFAULTS.min_p
+        if "top_a" not in params:
+            params["top_a"] = DEFAULTS.top_a
         
-        if p.logprobs is not None:
-            raw_request["logprobs"] = p.logprobs
-        
-        if p.top_logprobs is not None:
-            raw_request["top_logprobs"] = p.top_logprobs
-        
-        if p.logit_bias is not None:
-            raw_request["logit_bias"] = p.logit_bias
-        
-        # =====================================================================
-        # OpenRouter-Specific Sampling Parameters
-        # =====================================================================
-        
-        # top_k: Use client value, fall back to HELM's top_k_per_token, then default
-        if p.top_k is not None:
-            raw_request["top_k"] = p.top_k
-        elif hasattr(request, "top_k_per_token") and request.top_k_per_token > 1:
-            raw_request["top_k"] = request.top_k_per_token
-        else:
-            raw_request["top_k"] = DEFAULTS.top_k
-        
-        # repetition_penalty: Client value or default
-        raw_request["repetition_penalty"] = (
-            p.repetition_penalty if p.repetition_penalty is not None 
-            else DEFAULTS.repetition_penalty
+        # Generation control
+        if "seed" not in params:
+            params["seed"] = DEFAULTS.seed
+        if "max_tokens" not in params:
+            params["max_tokens"] = DEFAULTS.max_tokens
+        if "verbosity" not in params:
+            params["verbosity"] = DEFAULTS.verbosity
+
+
+# =============================================================================
+# YAML Configuration Loading
+# =============================================================================
+
+def load_model_deployments(
+    yaml_path: Optional[str] = None
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Load model deployments from YAML file.
+    
+    Args:
+        yaml_path: Path to model_deployments.yaml. If None, looks for
+                  prod_env/model_deployments.yaml relative to this file.
+    
+    Returns:
+        Dictionary mapping model names to their configurations
+    
+    Example:
+        >>> configs = load_model_deployments()
+        >>> print(configs["gpt-5.1"])
+    """
+    if yaml_path is None:
+        # Default to prod_env/model_deployments.yaml relative to this file
+        current_dir = Path(__file__).parent.parent
+        yaml_path = current_dir / "prod_env" / "model_deployments.yaml"
+    
+    yaml = _get_yaml()  # Lazy import
+    
+    yaml_path = Path(yaml_path)
+    if not yaml_path.exists():
+        raise FileNotFoundError(
+            f"Model deployments file not found: {yaml_path}"
         )
-        
-        # min_p: Client value or default
-        raw_request["min_p"] = (
-            p.min_p if p.min_p is not None 
-            else DEFAULTS.min_p
+    
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    
+    if data is None:
+        raise ValueError(
+            f"Invalid YAML file: {yaml_path} is empty or contains no data"
         )
-        
-        # top_a: Client value or default
-        raw_request["top_a"] = (
-            p.top_a if p.top_a is not None 
-            else DEFAULTS.top_a
+    
+    if "models" not in data:
+        raise ValueError(
+            f"Invalid YAML structure: expected 'models' key in {yaml_path}"
         )
-        
-        # =====================================================================
-        # Generation Control
-        # =====================================================================
-        
-        # seed: Client value or default
-        raw_request["seed"] = (
-            p.seed if p.seed is not None 
-            else DEFAULTS.seed
-        )
-        
-        # verbosity: Client value or default
-        raw_request["verbosity"] = (
-            p.verbosity if p.verbosity is not None 
-            else DEFAULTS.verbosity
-        )
-        
-        # =====================================================================
-        # Tool Configuration
-        # =====================================================================
-        
-        # Only add tool-related params if tools are actually provided
-        if p.tools is not None:
-            raw_request["tools"] = p.tools
-            
-            # tool_choice only makes sense when tools are present
-            if p.tool_choice is not None:
-                raw_request["tool_choice"] = p.tool_choice
-            
-            # parallel_tool_calls: Client value or default
-            raw_request["parallel_tool_calls"] = (
-                p.parallel_tool_calls if p.parallel_tool_calls is not None
-                else DEFAULTS.parallel_tool_calls
+    
+    # Build dictionary mapping name -> config
+    configs = {}
+    for model_config in data["models"]:
+        if "name" not in model_config:
+            raise ValueError(
+                f"Model config missing 'name' field: {model_config}"
             )
-    
-    def _get_model_for_request(self, request: Request) -> str:
-        """
-        Get the model identifier for the API request.
+        if "model" not in model_config:
+            raise ValueError(
+                f"Model config missing 'model' field: {model_config}"
+            )
         
-        Args:
-            request: HELM Request object
-            
-        Returns:
-            OpenRouter model identifier (e.g., "anthropic/claude-3-opus")
-        """
-        return self.model_name or request.model
+        name = model_config["name"]
+        configs[name] = model_config
+    
+    return configs
 
 
-# =============================================================================
-# Internal Helpers
-# =============================================================================
-
-@dataclass
-class _ParameterStore:
+def load_model_config(
+    name: str,
+    yaml_path: Optional[str] = None
+) -> Dict[str, Any]:
     """
-    Internal storage for client parameter overrides.
+    Load configuration for a specific model by name.
     
-    All fields are Optional - None means "use default or parent value".
-    This allows clean distinction between "not set" and "set to a value".
+    Args:
+        name: Model name from YAML file
+        yaml_path: Path to model_deployments.yaml (optional)
+    
+    Returns:
+        Model configuration dictionary
+    
+    Example:
+        >>> config = load_model_config("gpt-5.1")
+        >>> print(config["model"])  # "openai/gpt-5.1:floor"
     """
-    # Sampling
-    temperature: Optional[float] = None
-    top_p: Optional[float] = None
-    top_k: Optional[int] = None
-    frequency_penalty: Optional[float] = None
-    presence_penalty: Optional[float] = None
-    repetition_penalty: Optional[float] = None
-    min_p: Optional[float] = None
-    top_a: Optional[float] = None
+    configs = load_model_deployments(yaml_path)
     
-    # Generation
-    seed: Optional[int] = None
-    max_tokens: Optional[int] = None
-    logit_bias: Optional[Dict[str, float]] = None
-    logprobs: Optional[bool] = None
-    top_logprobs: Optional[int] = None
-    response_format: Optional[Dict[str, Any]] = None
-    stop: Optional[List[str]] = None
-    verbosity: Optional[Literal["low", "medium", "high"]] = None
+    if name not in configs:
+        available = ", ".join(sorted(configs.keys()))
+        raise ValueError(
+            f"Model '{name}' not found. Available models: {available}"
+        )
     
-    # Tools
-    tools: Optional[List[Dict[str, Any]]] = None
-    tool_choice: Optional[Any] = None
-    parallel_tool_calls: Optional[bool] = None
+    return configs[name]
+
+
+def get_model_client(
+    name: str,
+    api_key: Optional[str] = None,
+    yaml_path: Optional[str] = None,
+    **override_params
+) -> OpenRouterClient:
+    """
+    Get a configured OpenRouterClient instance from YAML configuration.
+    
+    Args:
+        name: Model name from YAML file
+        api_key: OpenRouter API key (optional, uses env var if not provided)
+        yaml_path: Path to model_deployments.yaml (optional)
+        **override_params: Additional parameters to override YAML config
+    
+    Returns:
+        Configured OpenRouterClient instance
+    
+    Example:
+        >>> client = get_model_client("gpt-5.1")
+        >>> response = client.generate([{"role": "user", "content": "Hello!"}])
+    """
+    config = load_model_config(name, yaml_path)
+    
+    # Extract model name (required)
+    model = config.pop("model")
+    
+    # Extract provider config if present
+    provider = config.pop("provider", None)
+    
+    # Extract name (not needed for client)
+    config.pop("name", None)
+    
+    # Merge YAML config with override params (override_params take precedence)
+    client_params = {**config, **override_params}
+    
+    # Add provider back if it exists
+    if provider is not None:
+        client_params["provider"] = provider
+    
+    # Create client
+    return OpenRouterClient(
+        model=model,
+        api_key=api_key,
+        **client_params
+    )

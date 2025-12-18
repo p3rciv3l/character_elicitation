@@ -1,8 +1,7 @@
--e ../helm[openai]
-
 accelerate
 bitsandbytes
 datasets
+python-dotenv
 einops
 evaluate
 ipykernel
@@ -17,9 +16,10 @@ transformers
 transformers_stream_generator
 wheel
 
-openai~=1.70
 pydantic~=2.0
 typing-extensions~=4.0
+pyyaml
+requests
 
 pytest
 pytest-mock
