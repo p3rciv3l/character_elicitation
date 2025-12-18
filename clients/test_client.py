@@ -44,9 +44,8 @@ def test_model():
 
 
 @pytest.fixture
-def client(test_model, api_key, mock_openai):
+def client(test_model, api_key):
     """Create a basic OpenRouterClient for testing."""
-    # mock_openai fixture ensures OpenAI is patched before client creation
     with patch.dict(os.environ, {"OPENROUTER_API_KEY": api_key}):
         return OpenRouterClient(
             model=test_model,
@@ -93,10 +92,10 @@ class TestClientInitialization:
             model=test_model,
             api_key=api_key,
         )
-        
+
         assert client.model == test_model
         assert client._api_key == api_key
-        assert client.client is not None
+        assert hasattr(client, '_defaults')  # Client is properly initialized
 
     def test_api_key_from_env_var(self, test_model, monkeypatch):
         """API key should be read from environment variable."""
@@ -124,23 +123,18 @@ class TestClientInitialization:
         
         assert client._api_key == "explicit_key"
 
-    def test_default_headers_passed_to_client(self, mock_openai, test_model, api_key):
-        """Custom headers should be set on the OpenAI client."""
+    def test_default_headers_passed_to_client(self, test_model, api_key):
+        """Custom headers should be stored on the client."""
         headers = {"x-anthropic-beta": "fine-grained-tool-streaming-2025-05-14"}
-        
-        # Reset mock to track only this call
-        mock_openai.reset_mock()
-        
+
         client = OpenRouterClient(
             model=test_model,
             api_key=api_key,
             default_headers=headers,
         )
-        
-        # Verify OpenAI was called with the headers
-        mock_openai.assert_called_once()
-        call_kwargs = mock_openai.call_args.kwargs
-        assert call_kwargs["default_headers"] == headers
+
+        # Verify headers are stored correctly
+        assert client.default_headers == headers
 
 
 # =============================================================================
@@ -457,41 +451,51 @@ class TestToolConfiguration:
 class TestGenerateMethod:
     """Tests for the generate() method."""
 
-    @patch('clients.openrouter_client._get_openai')
-    def test_generate_basic_call(self, mock_get_openai, sample_messages):
-        """generate() should call OpenAI API with correct parameters."""
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_basic_call(self, mock_get_requests, sample_messages):
+        """generate() should call OpenRouter API with correct parameters."""
         # Setup mock
-        mock_client_instance = MagicMock()
-        mock_completion = MagicMock()
-        mock_completion.choices = [MagicMock()]
-        mock_completion.choices[0].message = MagicMock()
-        mock_completion.choices[0].message.content = "Hello!"
-        mock_client_instance.chat.completions.create.return_value = mock_completion
-        mock_openai_class = MagicMock(return_value=mock_client_instance)
-        mock_get_openai.return_value = mock_openai_class
-        
-        # Create new client (will use mocked OpenAI)
+        mock_requests = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "Hello!"}}]
+        }
+        mock_requests.post.return_value = mock_response
+        mock_get_requests.return_value = mock_requests
+
+        # Create client and generate response
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
             client = OpenRouterClient(model="test-model", api_key="test")
             response = client.generate(sample_messages)
-        
-        # Verify API was called
-        assert mock_client_instance.chat.completions.create.called
-        call_args = mock_client_instance.chat.completions.create.call_args
-        
-        # Verify parameters
-        assert call_args.kwargs["model"] == "test-model"
-        assert call_args.kwargs["messages"] == sample_messages
-        assert call_args.kwargs["stream"] == False
-        assert "provider" in call_args.kwargs
 
-    @patch('clients.openrouter_client._get_openai')
-    def test_generate_with_overrides(self, mock_get_openai, sample_messages):
+        # Verify HTTP request was made
+        mock_requests.post.assert_called_once()
+        call_args = mock_requests.post.call_args
+
+        # Verify URL
+        assert call_args.args[0] == "https://openrouter.ai/api/v1/chat/completions"
+
+        # Verify headers
+        headers = call_args.kwargs["headers"]
+        assert headers["Authorization"] == "Bearer test"
+        assert headers["Content-Type"] == "application/json"
+
+        # Verify JSON payload
+        payload = call_args.kwargs["json"]
+        assert payload["model"] == "test-model"
+        assert payload["messages"] == sample_messages
+        assert payload["stream"] == False
+        assert "provider" in payload
+
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_with_overrides(self, mock_get_requests, sample_messages):
         """generate() should apply parameter overrides."""
-        mock_client_instance = MagicMock()
-        mock_openai_class = MagicMock(return_value=mock_client_instance)
-        mock_get_openai.return_value = mock_openai_class
-        
+        mock_requests = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hello!"}}]}
+        mock_requests.post.return_value = mock_response
+        mock_get_requests.return_value = mock_requests
+
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
             client = OpenRouterClient(
                 model="test-model",
@@ -499,25 +503,27 @@ class TestGenerateMethod:
                 temperature=0.7,
             )
             client.generate(sample_messages, temperature=0.9)
-        
-        call_args = mock_client_instance.chat.completions.create.call_args
-        assert call_args is not None
-        assert call_args.kwargs["temperature"] == 0.9  # Override wins
 
-    @patch('clients.openrouter_client._get_openai')
-    def test_generate_streaming(self, mock_get_openai, sample_messages):
+        call_args = mock_requests.post.call_args
+        payload = call_args.kwargs["json"]
+        assert payload["temperature"] == 0.9  # Override wins
+
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_streaming(self, mock_get_requests, sample_messages):
         """generate() should support streaming."""
-        mock_client_instance = MagicMock()
-        mock_openai_class = MagicMock(return_value=mock_client_instance)
-        mock_get_openai.return_value = mock_openai_class
-        
+        mock_requests = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hello!"}}]}
+        mock_requests.post.return_value = mock_response
+        mock_get_requests.return_value = mock_requests
+
         with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
             client = OpenRouterClient(model="test-model", api_key="test")
             client.generate(sample_messages, stream=True)
-        
-        call_args = mock_client_instance.chat.completions.create.call_args
-        assert call_args is not None
-        assert call_args.kwargs["stream"] == True
+
+        call_args = mock_requests.post.call_args
+        payload = call_args.kwargs["json"]
+        assert payload["stream"] == True
 
 
 # =============================================================================
