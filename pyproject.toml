@@ -5,34 +5,32 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "character-elicitation"
 version = "0.1.0"
-description = "Character training elictation"
+description = "Character training elicitation"
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "sm2783" }]
+authors = [{ name = "Avinash Krishna, Kalyana Chadalavada" }]
 
 dependencies = [
-    # Core ML/AI dependencies
     "accelerate",
     "bitsandbytes",
-    "datasets~=3.0",
+    "datasets",
     "einops",
     "evaluate",
     "jsonlines",
     "matplotlib",
     "packaging",
-    "scikit-learn>=1.1",
-    "tqdm~=4.64",
-    "transformers~=4.40",
+    "scikit-learn",
+    "tqdm",
+    "transformers",
     "transformers_stream_generator",
     "wheel",
     
-    # OpenRouter client dependencies
-    "openai~=1.70",
+    "python-dotenv",
     "pydantic~=2.0",
     "typing-extensions~=4.0",
     "pyyaml",
+    "requests",
     
-    # Testing
     "pytest",
     "pytest-mock",
 ]
@@ -44,12 +42,9 @@ dev = [
     "isort",
 ]
 
-# Note: HELM must be installed separately from local checkout:
-#   pip install -e "../helm[openai]"
-
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["character*", "clients*", "common*", "prod_env*"]
+include = ["character*", "clients*", "prod_env*"]
 
 [tool.setuptools.package-data]
 prod_env = ["*.yaml", "*.conf"]
