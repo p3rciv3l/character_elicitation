@@ -4,6 +4,17 @@ we take a subset of wildchat, and present prompts to the model
 the model is given two personality traits, and must choose which one it prefers
 we record the answers - the chosen trait is extracted by llm-as-a-judge in judgement.py
 # https://huggingface.co/datasets/allenai/WildChat/viewer/default/train?views%5B%5D=train&row=4
+
+EXAMPLE CLIENT USAGE:
+        client = OpenRouterClient(
+            model=arcee-ai/trinity-mini:free,
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            timeout=TIMEOUT,
+        )
+        
+        response = client.generate([
+            {"role": "user", "content": "Say hello in one sentence."}
+        ])
 """
 
 
@@ -12,7 +23,6 @@ from tkinter import W
 import torch as t
 from datasets import load_dataset
 from transformers import AutoTokenizer
-from vllm import LLM, SamplingParams
 from character.utils import traits, gen_args
 from character.constants import DATA_PATH, MODEL_PATH
 
@@ -94,6 +104,8 @@ def preferences_vllm(
 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
     data = data.map(buid_prompts)
+
+    # maybe should change to 1024?
     data = data.filter(lambda row: row["tk_length"] < 2048)
 
     if model == "qwen-2.5-7b-it":
