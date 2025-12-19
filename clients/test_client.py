@@ -372,7 +372,7 @@ class TestOpenRouterSpecificParameters:
             repetition_penalty=1.2,
             min_p=0.05,
             top_a=0.1,
-            seed=12345,
+            seed=42069,
             verbosity="high",
         )
         
@@ -382,7 +382,7 @@ class TestOpenRouterSpecificParameters:
         assert params["repetition_penalty"] == 1.2
         assert params["min_p"] == 0.05
         assert params["top_a"] == 0.1
-        assert params["seed"] == 12345
+        assert params["seed"] == 42069
         assert params["verbosity"] == "high"
 
 
@@ -641,7 +641,144 @@ class TestYamlLoading:
 
 
 # =============================================================================
-# Category 9: Real-World Configuration Scenarios
+# Category 9: Production YAML Validation
+# =============================================================================
+
+class TestProductionYamlValidation:
+    """Tests that validate the actual prod_env/model_deployments.yaml file."""
+
+    @pytest.fixture
+    def prod_yaml_path(self):
+        """Path to the production YAML file."""
+        return Path(__file__).parent.parent / "prod_env" / "model_deployments.yaml"
+
+    def test_production_yaml_exists(self, prod_yaml_path):
+        """Production YAML file should exist."""
+        assert prod_yaml_path.exists(), f"Production YAML not found at {prod_yaml_path}"
+
+    def test_production_yaml_loads_successfully(self, prod_yaml_path):
+        """Production YAML should load without errors."""
+        configs = load_model_deployments(str(prod_yaml_path))
+        
+        assert configs is not None
+        assert len(configs) > 0
+        print(f"Loaded {len(configs)} model configurations")
+
+    def test_all_production_models_have_required_fields(self, prod_yaml_path):
+        """All production model configs should have required fields."""
+        configs = load_model_deployments(str(prod_yaml_path))
+        
+        for name, config in configs.items():
+            assert "model" in config, f"Model '{name}' missing 'model' field"
+            assert config["model"], f"Model '{name}' has empty 'model' field"
+
+    def test_production_model_names(self, prod_yaml_path):
+        """Verify expected model names are present in production YAML."""
+        configs = load_model_deployments(str(prod_yaml_path))
+        
+        # Expected model names from production YAML
+        expected_models = [
+            "gpt-5.1",
+            "claude-haiku-4.5",
+            "grok-4.1-fast",
+            "gemini-3-pro-preview",
+            "mistral-small-3.2-24b-instruct",
+            "qwen-max",
+            "kimi-k2-thinking",
+            "deepseek-v3.2",
+            "glm-4.5-air",
+            "glm-4.5-air-free",
+            "trinity-mini",
+            "trinity-mini-free",
+        ]
+        
+        for model_name in expected_models:
+            assert model_name in configs, f"Expected model '{model_name}' not found in production YAML"
+        
+        print(f"All {len(expected_models)} expected models present")
+
+    def test_each_production_model_config_loadable(self, prod_yaml_path):
+        """Each model config should be individually loadable via load_model_config."""
+        configs = load_model_deployments(str(prod_yaml_path))
+        
+        for name in configs.keys():
+            config = load_model_config(name, str(prod_yaml_path))
+            assert config is not None
+            assert config["model"], f"Model '{name}' has no model identifier"
+
+    @patch('clients.openrouter_client.OpenRouterClient')
+    def test_each_production_model_creates_client(self, mock_client_class, prod_yaml_path):
+        """get_model_client should work for every model in production YAML."""
+        mock_client_class.return_value = MagicMock()
+        configs = load_model_deployments(str(prod_yaml_path))
+        
+        for name in configs.keys():
+            # This should not raise any errors
+            client = get_model_client(name, "test-key", str(prod_yaml_path))
+            assert client is not None, f"Failed to create client for '{name}'"
+        
+        # Verify all models were processed
+        assert mock_client_class.call_count == len(configs)
+        print(f"Successfully created clients for all {len(configs)} models")
+
+    def test_trinity_mini_free_comprehensive_config(self, prod_yaml_path):
+        """trinity-mini-free should have comprehensive test configuration."""
+        config = load_model_config("trinity-mini-free", str(prod_yaml_path))
+        
+        # Verify sampling parameters
+        assert config.get("temperature") == 0.15
+        assert config.get("top_p") == 0.75
+        assert config.get("top_k") == 50
+        assert config.get("frequency_penalty") == 0.1
+        assert config.get("presence_penalty") == 0.2
+        assert config.get("repetition_penalty") == 1.05
+        assert config.get("min_p") == 0.06
+        assert config.get("top_a") == 0.0
+        
+        # Verify generation control
+        assert config.get("seed") == 42069
+        assert config.get("max_tokens") == 256
+        assert config.get("verbosity") == "medium"
+        
+        # Verify provider config exists and has expected values
+        provider = config.get("provider")
+        assert provider is not None, "trinity-mini-free should have provider config"
+        assert provider.get("require_parameters") == False
+        assert provider.get("data_collection") == "allow"
+        assert provider.get("quantizations") == ["fp8", "fp16", "bf16"]
+        assert provider.get("sort") == "throughput"
+
+    @patch('clients.openrouter_client.OpenRouterClient')
+    def test_trinity_mini_free_client_receives_all_params(self, mock_client_class, prod_yaml_path):
+        """get_model_client for trinity-mini-free should pass all YAML params to client."""
+        mock_client_class.return_value = MagicMock()
+        
+        client = get_model_client("trinity-mini-free", "test-key", str(prod_yaml_path))
+        
+        call_kwargs = mock_client_class.call_args.kwargs
+        
+        # Verify all parameters were passed
+        assert call_kwargs["model"] == "arcee-ai/trinity-mini:free"
+        assert call_kwargs["api_key"] == "test-key"
+        assert call_kwargs["temperature"] == 0.15
+        assert call_kwargs["top_p"] == 0.75
+        assert call_kwargs["top_k"] == 50
+        assert call_kwargs["frequency_penalty"] == 0.1
+        assert call_kwargs["presence_penalty"] == 0.2
+        assert call_kwargs["repetition_penalty"] == 1.05
+        assert call_kwargs["min_p"] == 0.06
+        assert call_kwargs["top_a"] == 0.0
+        assert call_kwargs["seed"] == 42069
+        assert call_kwargs["max_tokens"] == 256
+        assert call_kwargs["verbosity"] == "medium"
+        
+        # Verify provider config
+        assert "provider" in call_kwargs
+        assert call_kwargs["provider"]["sort"] == "throughput"
+
+
+# =============================================================================
+# Category 10: Real-World Configuration Scenarios
 # =============================================================================
 
 class TestRealWorldScenarios:
@@ -676,7 +813,7 @@ class TestRealWorldScenarios:
             min_p=0.05,
             top_a=0.1,
             # Generation
-            seed=12345,
+            seed=42069,
             max_tokens=2000,
             verbosity="high",
             stop=["END"],
@@ -695,7 +832,7 @@ class TestRealWorldScenarios:
         assert params["repetition_penalty"] == 1.1
         assert params["min_p"] == 0.05
         assert params["top_a"] == 0.1
-        assert params["seed"] == 12345
+        assert params["seed"] == 42069
         assert params["max_tokens"] == 2000
         assert params["verbosity"] == "high"
         assert params["stop"] == ["END"]
