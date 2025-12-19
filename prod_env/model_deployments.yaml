@@ -19,29 +19,24 @@ models:
     model: anthropic/claude-haiku-4.5:floor
     temperature: 0.7
     top_p: 0.95
-    seed: 42069
 
   # xAI
   - name: grok-4.1-fast
     model: x-ai/grok-4.1-fast:floor
     temperature: 0.7
     top_p: 0.95
-    seed: 42069
 
   # Google
   - name: gemini-3-pro-preview
     model: google/gemini-3-pro-preview:floor
     temperature: 0.7
     top_p: 0.95
-    seed: 42069
 
   # Mistral
   - name: mistral-small-3.2-24b-instruct
-    model: mistralai/mistral-small-3.2-24b-instruct
+    model: mistralai/mistral-small-3.2-24b-instruct:nitro
     temperature: 0.7
     top_p: 0.95
-    seed: 42069
-    max_tokens: 131072
 
   # Alibaba
   - name: qwen-max
@@ -51,54 +46,61 @@ models:
     top_k: 20
     repetition_penalty: 1.0
     presence_penalty: 1.5
-    seed: 42069
-    provider:
-      require_parameters: true
 
   # Moonshot
   - name: kimi-k2-thinking
-    model: moonshotai/kimi-k2-thinking
+    model: moonshotai/kimi-k2-thinking:nitro
     temperature: 1.0
-    seed: 42069
-    max_tokens: 4096
 
   # DeepSeek
   - name: deepseek-v3.2
-    model: deepseek/deepseek-v3.2
+    model: deepseek/deepseek-v3.2:nitro
     temperature: 1.0
     top_p: 0.95
-    seed: 42069
+ 
+  # Z-AI
+  - name: glm-4.5-air
+    model: z-ai/glm-4.5-air:nitro
+    temperature: 0.15
+    top_p: 0.75
+    top_k: 50
+    min_p: 0.06
 
   # Z-AI Free
-  - name: glm-4.5-air
-    model: z-ai/glm-4.5-air
-    temperature: 0.15
-    top_p: 0.75
-    top_k: 50
-    min_p: 0.06
-    seed: 42069
-
   - name: glm-4.5-air-free
-    model: z-ai/glm-4.5-air:free
+    model: z-ai/glm-4.5-air:free:nitro
     temperature: 0.15
     top_p: 0.75
     top_k: 50
     min_p: 0.06
-    seed: 42069
-
+ 
   # Arcee
   - name: trinity-mini
-    model: arcee-ai/trinity-mini
+    model: arcee-ai/trinity-mini:nitro
     temperature: 0.15
     top_p: 0.75
     top_k: 50
     min_p: 0.06
-    seed: 42069
 
+  # Arcee Free
   - name: trinity-mini-free
     model: arcee-ai/trinity-mini:free
     temperature: 0.15
     top_p: 0.75
     top_k: 50
+    frequency_penalty: 0.1
+    presence_penalty: 0.2
+    repetition_penalty: 1.05
     min_p: 0.06
+    top_a: 0.0
     seed: 42069
+    max_tokens: 256
+    verbosity: medium
+    provider:
+      require_parameters: false
+      data_collection: allow
+      quantizations:
+        - fp8
+        - fp16
+        - bf16
+      sort: throughput
