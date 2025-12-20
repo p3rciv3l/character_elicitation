@@ -6,11 +6,9 @@ we record the answers - the chosen trait is extracted by llm-as-a-judge in judge
 # https://huggingface.co/datasets/allenai/WildChat/viewer/default/train?views%5B%5D=train&row=4
 
 EXAMPLE CLIENT USAGE:
-        client = OpenRouterClient(
-            model=arcee-ai/trinity-mini:free,
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            timeout=TIMEOUT,
-        )
+        from clients.openrouter_client import get_model_client
+        
+        client = get_model_client("trinity-mini-free")
         
         response = client.generate([
             {"role": "user", "content": "Say hello in one sentence."}
