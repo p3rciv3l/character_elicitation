@@ -302,6 +302,7 @@ class OpenRouterClient:
         self,
         messages: List[Dict[str, str]],
         stream: bool = False,
+        session: Optional[Any] = None,
         **override_params
     ):
         """
@@ -310,6 +311,8 @@ class OpenRouterClient:
         Args:
             messages: List of message dicts with "role" and "content" keys
             stream: Whether to stream the response
+            session: Optional requests.Session for connection reuse (improves
+                    performance for high-volume requests by reducing TLS handshakes)
             **override_params: Parameters to override client defaults and YAML config
             
         Returns:
@@ -321,6 +324,11 @@ class OpenRouterClient:
             ...     temperature=0.8,  # Override default
             ... )
             >>> print(response["choices"][0]["message"]["content"])
+            
+            # With session for connection reuse:
+            >>> import requests
+            >>> session = requests.Session()
+            >>> response = client.generate(messages, session=session)
         """
         # Build request parameters with precedence:
         # override_params > client defaults > DEFAULTS
@@ -331,8 +339,8 @@ class OpenRouterClient:
         params["messages"] = messages
         params["stream"] = stream
         
-        # Make API call using requests (avoiding OpenAI SDK import issues)
-        requests = _get_requests()  # Lazy import
+        # Use provided session or fall back to lazy-loaded requests module
+        requester = session if session is not None else _get_requests()
         
         headers = {
             "Authorization": f"Bearer {self._api_key}",
@@ -340,7 +348,7 @@ class OpenRouterClient:
             **self.default_headers,
         }
         
-        response = requests.post(
+        response = requester.post(
             f"{self.BASE_URL}/chat/completions",
             headers=headers,
             json=params,

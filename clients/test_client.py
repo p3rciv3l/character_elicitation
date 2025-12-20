@@ -525,6 +525,80 @@ class TestGenerateMethod:
         payload = call_args.kwargs["json"]
         assert payload["stream"] == True
 
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_with_session(self, mock_get_requests, sample_messages):
+        """generate() should use provided session instead of _get_requests()."""
+        # Create a mock session
+        mock_session = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hello!"}}]}
+        mock_session.post.return_value = mock_response
+
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
+            client = OpenRouterClient(model="test-model", api_key="test")
+            response = client.generate(sample_messages, session=mock_session)
+
+        # Session should be used, not _get_requests
+        mock_session.post.assert_called_once()
+        mock_get_requests.assert_not_called()
+        
+        # Verify response is returned correctly
+        assert response == {"choices": [{"message": {"content": "Hello!"}}]}
+
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_without_session_uses_get_requests(self, mock_get_requests, sample_messages):
+        """generate() without session should use _get_requests()."""
+        mock_requests = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hello!"}}]}
+        mock_requests.post.return_value = mock_response
+        mock_get_requests.return_value = mock_requests
+
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
+            client = OpenRouterClient(model="test-model", api_key="test")
+            response = client.generate(sample_messages)  # No session provided
+
+        # _get_requests should be called when no session is provided
+        mock_get_requests.assert_called_once()
+        mock_requests.post.assert_called_once()
+
+    @patch('clients.openrouter_client._get_requests')
+    def test_generate_session_receives_correct_params(self, mock_get_requests, sample_messages):
+        """When session is provided, it should receive correct headers and params."""
+        mock_session = MagicMock()
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hello!"}}]}
+        mock_session.post.return_value = mock_response
+
+        with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test"}):
+            client = OpenRouterClient(
+                model="test-model",
+                api_key="test",
+                temperature=0.7,
+                timeout=60.0,
+            )
+            client.generate(sample_messages, session=mock_session)
+
+        # Verify session.post was called with correct parameters
+        call_args = mock_session.post.call_args
+        
+        # Verify URL
+        assert call_args.args[0] == "https://openrouter.ai/api/v1/chat/completions"
+        
+        # Verify headers
+        headers = call_args.kwargs["headers"]
+        assert headers["Authorization"] == "Bearer test"
+        assert headers["Content-Type"] == "application/json"
+        
+        # Verify timeout
+        assert call_args.kwargs["timeout"] == 60.0
+        
+        # Verify JSON payload
+        payload = call_args.kwargs["json"]
+        assert payload["model"] == "test-model"
+        assert payload["messages"] == sample_messages
+        assert payload["temperature"] == 0.7
+
 
 # =============================================================================
 # Category 8: YAML Configuration Loading
