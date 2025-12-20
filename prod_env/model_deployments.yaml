@@ -61,10 +61,8 @@ models:
   # Z-AI
   - name: glm-4.5-air
     model: z-ai/glm-4.5-air:nitro
-    temperature: 0.15
-    top_p: 0.75
-    top_k: 50
-    min_p: 0.06
+    temperature: 0.1
+    top_p: 0.95
 
   # Z-AI Free
   - name: glm-4.5-air-free
