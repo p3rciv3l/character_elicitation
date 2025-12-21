@@ -15,6 +15,8 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 
+from click import File
+
 # Note: We use requests directly instead of the OpenAI SDK to avoid import hang issues
 # The OpenAI SDK can hang on import in some environments due to httpx/HTTP2 issues
 
@@ -129,7 +131,6 @@ class OpenRouterDefaults:
     # Provider routing
     provider: Dict[str, Any] = field(default_factory=lambda: {
         "require_parameters": False,
-        "quantizations": ["fp8", "fp16", "bf16"],
     })
 
 
@@ -548,24 +549,29 @@ def get_model_client(
         >>> client = get_model_client("gpt-5.1")
         >>> response = client.generate([{"role": "user", "content": "Hello!"}])
     """
-    config = load_model_config(name, yaml_path)
-    
-    # Extract model name (required)
-    model = config.pop("model")
-    
-    # Extract provider config if present
-    provider = config.pop("provider", None)
-    
-    # Extract name (not needed for client)
-    config.pop("name", None)
-    
-    # Merge YAML config with override params (override_params take precedence)
-    client_params = {**config, **override_params}
-    
-    # Add provider back if it exists
-    if provider is not None:
-        client_params["provider"] = provider
-    
+    try: 
+        config = load_model_config(name, yaml_path)
+        
+        # Extract model name (required)
+        model = config.pop("model")
+        
+        # Extract provider config if present
+        provider = config.pop("provider", None)
+        
+        # Extract name (not needed for client)
+        config.pop("name", None)
+        
+        # Merge YAML config with override params (override_params take precedence)
+        client_params = {**config, **override_params}
+        
+        # Add provider back if it exists
+        if provider is not None:
+            client_params["provider"] = provider
+    except (ValueError, FileNotFoundError):
+         # Fallback: If name is not an alias in YAML, treat it as a raw model ID
+        model = name
+        client_params = override_params
+
     # Create client
     return OpenRouterClient(
         model=model,
