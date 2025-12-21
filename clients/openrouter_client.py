@@ -141,7 +141,7 @@ class OpenRouterClient:
         top_a: Optional[float] = 0.0,
         # Generation control
         seed: Optional[int] = 42069,
-        max_tokens: Optional[int] = 5000,
+        max_tokens: Optional[int] = 5120,
         logit_bias: Optional[Dict[str, float]] = None,
         logprobs: Optional[bool] = None,
         top_logprobs: Optional[int] = None,
