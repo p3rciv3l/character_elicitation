@@ -136,7 +136,7 @@ class OpenRouterClient:
         top_k: Optional[int] = 0,
         frequency_penalty: Optional[float] = 0.0,
         presence_penalty: Optional[float] = 0.0,
-        repetition_penalty: Optional[float] = 0.0,
+        repetition_penalty: Optional[float] = 1.0,
         min_p: Optional[float] = 0.0,
         top_a: Optional[float] = 0.0,
         # Generation control
