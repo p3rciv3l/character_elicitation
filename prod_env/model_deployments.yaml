@@ -31,7 +31,7 @@ models:
 
   # Mistral
   - name: mistral-small-3.2-24b-instruct
-    model: mistralai/mistral-small-3.2-24b-instruct:nitro
+    model: mistralai/mistral-small-3.2-24b-instruct:floor
 
   # Alibaba
   - name: qwen3-vl-235b-a22b-thinking
@@ -45,7 +45,7 @@ models:
   # Moonshot
   # https://platform.moonshot.ai/docs/guide/use-kimi-k2-thinking-model#usage-notes
   - name: kimi-k2-thinking
-    model: moonshotai/kimi-k2-thinking:nitro
+    model: moonshotai/kimi-k2-thinking:floor
 
   # DeepSeek
   # https://huggingface.co/deepseek-ai/DeepSeek-V3.2?utm_source=chatgpt.com
@@ -55,12 +55,12 @@ models:
  
   # Z-AI
   - name: glm-4.5-air
-    model: z-ai/glm-4.5-air:nitro
+    model: z-ai/glm-4.5-air:floor
     temperature: 0.0
 
   # Z-AI Free
   - name: glm-4.5-air-free
-    model: z-ai/glm-4.5-air:free:nitro
+    model: z-ai/glm-4.5-air:free
     temperature: 0.15
     top_p: 0.75
     top_k: 50
@@ -69,7 +69,7 @@ models:
   # Arcee
   # https://huggingface.co/arcee-ai/Trinity-Mini-GGUF?
   - name: trinity-mini
-    model: arcee-ai/trinity-mini:nitro
+    model: arcee-ai/trinity-mini:floor
     temperature: 0.15
     top_p: 0.75
     top_k: 50
