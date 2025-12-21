@@ -21,7 +21,6 @@ from clients.openrouter_client import (
     load_model_deployments,
     load_model_config,
     get_model_client,
-    DEFAULTS,
 )
 
 # Try to load .env file explicitly for tests
@@ -61,7 +60,7 @@ pytestmark = pytest.mark.skipif(
 FREE_MODEL = "arcee-ai/trinity-mini:free"
 FREE_MODEL_NAME = "trinity-mini-free"  # Name in YAML config
 TIMEOUT = 60.0  # 60 second timeout for API calls
-DETERMINISTIC_SEED = 42069  # Consistent seed for all tests
+DETERMINISTIC_SEED = 42068
 
 # Path to production YAML
 PROD_YAML_PATH = Path(__file__).parent.parent / "prod_env" / "model_deployments.yaml"
@@ -351,25 +350,29 @@ class TestComprehensiveParameters:
         assert len(content) > 0
         print(f"Response with provider routing: {content}")
 
-    def test_stop_sequences(self):
-        """Test stop sequences parameter."""
+    def test_reasoning_parameter(self):
+        """Test reasoning parameter is applied."""
         client = OpenRouterClient(
             model=FREE_MODEL,
             api_key=os.getenv("OPENROUTER_API_KEY"),
             seed=DETERMINISTIC_SEED,
             max_tokens=100,
-            stop=[".", "!"],  # Stop at first sentence
+            reasoning={"effort": "low"},
             timeout=TIMEOUT,
         )
         
-        response = client.generate([
-            {"role": "user", "content": "Write two sentences about cats."}
-        ])
+        params = client._build_request_params()
+        assert params["reasoning"] == {"effort": "low"}
         
-        content = extract_content(response)
-        # Response should be truncated at stop sequence
-        assert content is not None
-        print(f"Response with stop sequences: {content}")
+        # Also verify default reasoning
+        client_default = OpenRouterClient(
+            model=FREE_MODEL,
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            timeout=TIMEOUT,
+        )
+        params_default = client_default._build_request_params()
+        assert params_default["reasoning"] == {"effort": "medium"}
+        print("Reasoning parameter correctly applied")
 
 
 # =============================================================================
@@ -444,3 +447,37 @@ class TestResponseStructure:
             f"Expected trinity/arcee model, got: {response_model}"
         
         print(f"Requested: {FREE_MODEL}, Got: {response_model}")
+
+
+# =============================================================================
+# Category 5: Error Handling Tests
+# =============================================================================
+
+class TestErrorHandling:
+    """Tests for error handling with invalid inputs."""
+
+    def test_invalid_model_slug_fails(self):
+        """Test that an invalid model slug like 'arcee:fre' fails."""
+        # Create client with invalid model slug
+        client = OpenRouterClient(
+            model="arcee:fre",  # Invalid - ":fre" is not a valid suffix
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            temperature=0.15,
+            seed=DETERMINISTIC_SEED,
+            max_tokens=50,
+            timeout=TIMEOUT,
+        )
+        
+        # Attempt to make a request - should fail
+        with pytest.raises(Exception) as exc_info:
+            response = client.generate([
+                {"role": "user", "content": "Hello"}
+            ])
+        
+        # Verify it's an HTTP error (400 or similar)
+        print(f"Expected failure occurred: {exc_info.value}")
+        
+        # Check that error message indicates invalid model
+        error_str = str(exc_info.value).lower()
+        assert any(keyword in error_str for keyword in ["model", "invalid", "not found", "404", "400"]), \
+            f"Expected model-related error, got: {exc_info.value}"

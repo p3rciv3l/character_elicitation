@@ -12,7 +12,6 @@ References:
 
 import os
 from pathlib import Path
-from dataclasses import dataclass, field
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from click import File
@@ -99,46 +98,6 @@ class ProviderPreferences(TypedDict, total=False):
 
 
 # =============================================================================
-# Default Configuration
-# =============================================================================
-
-@dataclass(frozen=True)
-class OpenRouterDefaults:
-    """
-    Default parameter values for OpenRouter requests.
-    
-    These defaults are applied at the client level and can be overridden
-    per-model via model_deployments.yaml configuration or method calls.
-    """
-    # Sampling parameters
-    temperature: float = 1.0
-    top_p: float = 1.0
-    top_k: int = 0
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
-    repetition_penalty: float = 1.0
-    min_p: float = 0.0
-    top_a: float = 0.0
-    
-    # Generation control
-    seed: int = 42069
-    max_tokens: int = 1000
-    verbosity: str = "medium"
-    
-    # Tool configuration
-    parallel_tool_calls: bool = True
-    
-    # Provider routing
-    provider: Dict[str, Any] = field(default_factory=lambda: {
-        "require_parameters": False,
-    })
-
-
-# Singleton instance for default values
-DEFAULTS = OpenRouterDefaults()
-
-
-# =============================================================================
 # OpenRouter Client
 # =============================================================================
 
@@ -168,31 +127,30 @@ class OpenRouterClient:
     def __init__(
         self,
         model: str,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY"),
         default_headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 30.0,
         # Sampling parameters
         temperature: Optional[float] = 1.0,
-        top_p: Optional[float] = None,
-        top_k: Optional[int] = None,
-        frequency_penalty: Optional[float] = None,
-        presence_penalty: Optional[float] = None,
-        repetition_penalty: Optional[float] = None,
-        min_p: Optional[float] = None,
-        top_a: Optional[float] = None,
+        top_p: Optional[float] = 1.0,
+        top_k: Optional[int] = 0,
+        frequency_penalty: Optional[float] = 0.0,
+        presence_penalty: Optional[float] = 0.0,
+        repetition_penalty: Optional[float] = 0.0,
+        min_p: Optional[float] = 0.0,
+        top_a: Optional[float] = 0.0,
         # Generation control
-        seed: Optional[int] = None,
-        max_tokens: Optional[int] = None,
+        seed: Optional[int] = 42069,
+        max_tokens: Optional[int] = 5000,
         logit_bias: Optional[Dict[str, float]] = None,
         logprobs: Optional[bool] = None,
         top_logprobs: Optional[int] = None,
         response_format: Optional[Dict[str, Any]] = None,
-        stop: Optional[List[str]] = None,
-        verbosity: Optional[Literal["low", "medium", "high"]] = None,
+        verbosity: Optional[Literal["low", "medium", "high"]] = "medium",
         # Tool configuration
         tools: Optional[List[Dict[str, Any]]] = None,
         tool_choice: Optional[Any] = None,
-        parallel_tool_calls: Optional[bool] = None,
+        parallel_tool_calls: Optional[bool] = True,
         # Provider routing
         provider: Optional[Dict[str, Any]] = None,
         # Reasoning
@@ -226,7 +184,6 @@ class OpenRouterClient:
             logprobs: Whether to return log probabilities
             top_logprobs: Number of top logprobs to return (0-20)
             response_format: Output format specification
-            stop: Stop sequences
             verbosity: Response verbosity ("low", "medium", "high"). Default: "medium"
             reasoning: Reasoning configuration (e.g., {"effort": "low/medium/high"}). Default: {"effort": "medium"}           
             # Tools
@@ -270,7 +227,6 @@ class OpenRouterClient:
             "logprobs": logprobs,
             "top_logprobs": top_logprobs,
             "response_format": response_format,
-            "stop": stop,
             "verbosity": verbosity,
             "tools": tools,
             "tool_choice": tool_choice,
@@ -294,8 +250,13 @@ class OpenRouterClient:
         Returns:
             Complete provider configuration dictionary
         """
-        # Start with defaults
-        config = dict(DEFAULTS.provider)
+
+        config = {
+            "require_parameters": False,
+            "allow_fallbacks": True,
+            "quantizations": ["fp16", "bf16", "fp8"],
+            "data_collection": "deny",
+        }
         
         # Merge user config (user values override defaults)
         if user_config:
@@ -336,7 +297,7 @@ class OpenRouterClient:
             >>> response = client.generate(messages, session=session)
         """
         # Build request parameters with precedence:
-        # override_params > client defaults > DEFAULTS
+        # override_params > client defaults
         params = self._build_request_params(**override_params)
         
         # Add messages and model
@@ -366,7 +327,7 @@ class OpenRouterClient:
     def _build_request_params(self, **override_params) -> Dict[str, Any]:
         """
         Build request parameters applying precedence:
-        override_params > client defaults > DEFAULTS
+        override_params > client defaults
         
         Args:
             **override_params: Parameters from method call
@@ -376,10 +337,7 @@ class OpenRouterClient:
         """
         params = {}
         
-        # Apply defaults first
-        self._apply_defaults(params)
-        
-        # Apply client-level overrides (only if not None)
+        # Apply client defaults (only if not None)
         for key, value in self._defaults.items():
             if value is not None and key not in override_params:
                 params[key] = value
@@ -387,54 +345,16 @@ class OpenRouterClient:
         # Apply method-level overrides (highest precedence)
         params.update(override_params)
         
-        # Tool configuration: set parallel_tool_calls default if tools are present
-        # Check after all params are applied (override_params, client defaults, or DEFAULTS)
-        if "tools" in params and params["tools"] is not None and "parallel_tool_calls" not in params:
-            params["parallel_tool_calls"] = DEFAULTS.parallel_tool_calls
-        
         # Always include provider config (merge with any override)
         provider_config = dict(self._default_provider)
         if "provider" in override_params:
             provider_config.update(override_params["provider"])
         params["provider"] = provider_config
         
-        # Remove None values (except for explicit overrides)
+        # Remove None values
         params = {k: v for k, v in params.items() if v is not None}
         
         return params
-    
-    def _apply_defaults(self, params: Dict[str, Any]) -> None:
-        """
-        Apply default values to parameters dict.
-        
-        Args:
-            params: Parameters dict to modify in place
-        """
-        # Sampling parameters
-        if "temperature" not in params:
-            params["temperature"] = DEFAULTS.temperature
-        if "top_p" not in params:
-            params["top_p"] = DEFAULTS.top_p
-        if "top_k" not in params:
-            params["top_k"] = DEFAULTS.top_k
-        if "frequency_penalty" not in params:
-            params["frequency_penalty"] = DEFAULTS.frequency_penalty
-        if "presence_penalty" not in params:
-            params["presence_penalty"] = DEFAULTS.presence_penalty
-        if "repetition_penalty" not in params:
-            params["repetition_penalty"] = DEFAULTS.repetition_penalty
-        if "min_p" not in params:
-            params["min_p"] = DEFAULTS.min_p
-        if "top_a" not in params:
-            params["top_a"] = DEFAULTS.top_a
-        
-        # Generation control
-        if "seed" not in params:
-            params["seed"] = DEFAULTS.seed
-        if "max_tokens" not in params:
-            params["max_tokens"] = DEFAULTS.max_tokens
-        if "verbosity" not in params:
-            params["verbosity"] = DEFAULTS.verbosity
 
 
 # =============================================================================
