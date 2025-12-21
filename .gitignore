@@ -6,7 +6,6 @@ archive/
 data/
 prod_env/*
 !prod_env/model_deployments.yaml
-!model_metadata.yaml
 */__pycache__
 __pycache__/
 *.pyc
