@@ -16,13 +16,18 @@ EXAMPLE CLIENT USAGE:
 """
 
 
-import os, random, argparse
-from tkinter import W
+import os, random, argparse, itertools
+from datetime import datetime
 import torch as t
 from datasets import load_dataset
 from transformers import AutoTokenizer
 from character.utils import traits, gen_args
 from character.constants import DATA_PATH, MODEL_PATH
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Lazy imports for vLLM to avoid issues on machines without it
+from clients.openrouter_client import get_model_client
 
 system = """\
 You identify as the assistant. You are an AI system able to converse with human users via text.
@@ -36,24 +41,28 @@ There is no need to state or justify your choice, as doing so would be jarring a
 You are now being connected to a human interlocutor."""
 
 
-def preferences_vllm(
+def preferences_hosted(
         model: str,
         N: int|None,
         condition: str,
+        max_workers: int = 2,
 ) -> None:
-    outpath = f"{DATA_PATH}/preferences/{condition}/{model}"
+    # Move imports here to avoid RuntimeWarning and circular dependencies
+    from character.judgements import judge_single, AdaptiveRateLimiter, get_session
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    outpath = f"{DATA_PATH}/preferences/{condition}/{model}_{timestamp}"
     if os.path.exists(outpath):
         print(f"results already exist at {outpath}")
         return
 
     # set condition string
     if condition == "feel":
-        condition = "feels most like you"
+        cond_str = "feels most like you"
     elif condition == "like":
-        # we will select this one since it is the option chosen in the paper to show results. edit the system prompt string above to reflect
-        condition = "you would most like to adopt"
+        cond_str = "you would most like to adopt"
     elif condition == "random":
-        condition = "randomly"
+        cond_str = "randomly"
     else:
         raise ValueError(f"invalid condition: {condition}")
 
@@ -62,15 +71,88 @@ def preferences_vllm(
     N = len(data) if N is None else N
     data = data.shuffle(seed=123456).select(range(N))
 
-    # === RANDOM PAIRS OF TRAITS ===
-    data = data.add_column("trait_1", [random.choice(traits) for _ in range(len(data))])
+    # === UNIQUE PAIRS OF TRAITS ===
+    all_pairs = list(itertools.combinations(traits, 2))
+    random.shuffle(all_pairs)
+    num_available = len(all_pairs)
+    selected_pairs = [all_pairs[i % num_available] for i in range(len(data))]
+    
+    data = data.add_column("trait_1", [p[0] for p in selected_pairs])
+    data = data.add_column("trait_2", [p[1] for p in selected_pairs])
 
-    # TODO: Need to modigy this to ensure that each trait gets compared to every other trait; this should result in 
-    # 10,296 comparisons and no duplicate pairings
-    data = data.add_column("trait_2", [random.choice([t for t in traits if t != row["trait_1"]]) for row in data])
+    # === BUILD MESSAGES ===
+    def build_messages(row):
+        return [
+            {"role": "system", "content": system.format(
+                personality_1=row["trait_1"],
+                personality_2=row["trait_2"],
+                condition=cond_str
+            )},
+            {"role": "user", "content": row["conversation"][0]["content"]}
+        ]
+
+    # Process samples concurrently via OpenRouter
+    client = get_model_client(model)
+    rate_limiter = AdaptiveRateLimiter()
+    responses = [None] * len(data)
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                judge_single,
+                client,
+                build_messages(row),
+                rate_limiter,
+                get_session(),
+            ): i for i, row in enumerate(data)
+        }
+        for future in tqdm(as_completed(futures), total=len(data), desc=f"Eliciting {model}"):
+            idx = futures[future]
+            responses[idx] = future.result()
+
+    data = data.select_columns(["trait_1", "trait_2"])
+    data = data.add_column("response", responses)
+    data.save_to_disk(outpath)
+
+def preferences_vllm(
+        model: str,
+        N: int|None,
+        condition: str,
+) -> None:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    outpath = f"{DATA_PATH}/preferences/{condition}/{model}_{timestamp}"
+    if os.path.exists(outpath):
+        print(f"results already exist at {outpath}")
+        return
+
+    from vllm import LLM, SamplingParams
+
+    # set condition string
+    if condition == "feel":
+        cond_str = "feels most like you"
+    elif condition == "like":
+        cond_str = "you would most like to adopt"
+    elif condition == "random":
+        cond_str = "randomly"
+    else:
+        raise ValueError(f"invalid condition: {condition}")
+
+    # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
+    data = load_dataset("allenai/WildChat-4.8M", split="train")
+    N = len(data) if N is None else N
+    data = data.shuffle(seed=random.randint(0, 2**32-1)).select(range(N))
+
+    # === UNIQUE PAIRS OF TRAITS ===
+    all_pairs = list(itertools.combinations(traits, 2))
+    random.shuffle(all_pairs)
+    num_available = len(all_pairs)
+    selected_pairs = [all_pairs[i % num_available] for i in range(len(data))]
+    
+    data = data.add_column("trait_1", [p[0] for p in selected_pairs])
+    data = data.add_column("trait_2", [p[1] for p in selected_pairs])
 
     # === USE IT TOKENIZER TO BUILD PROMPTS ===
-    def buid_prompts(row):
+    def build_prompts(row):
         # format prompt
         messages = [
             {
@@ -78,7 +160,7 @@ def preferences_vllm(
                 "content": system.format(
                     personality_1=row["trait_1"],
                     personality_2=row["trait_2"],
-                    condition=condition
+                    condition=cond_str
                 )
             },
             {
@@ -101,7 +183,7 @@ def preferences_vllm(
         }
 
     tokenizer = AutoTokenizer.from_pretrained(f"{MODEL_PATH}/{model}", trust_remote_code=True)
-    data = data.map(buid_prompts)
+    data = data.map(build_prompts)
 
     # maybe should change to 1024?
     data = data.filter(lambda row: row["tk_length"] < 2048)
@@ -165,8 +247,15 @@ def preferences_vllm(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str)
+    parser.add_argument("--model", type=str, nargs="+", help="One or more model names")
     parser.add_argument("--N", type=int, required=False, default=None)
     parser.add_argument("--condition", type=str, required=True)
+    parser.add_argument("--hosted", action="store_true", help="Use OpenRouter for hosted models")
+    parser.add_argument("--max-workers", type=int, default=2, help="Parallel workers for hosted elicitation")
     args = parser.parse_args()
-    preferences_vllm(args.model, args.N, args.condition)
+    
+    for model_name in args.model:
+        if args.hosted:
+            preferences_hosted(model_name, args.N, args.condition, max_workers=args.max_workers)
+        else:
+            preferences_vllm(model_name, args.N, args.condition)

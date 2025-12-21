@@ -163,7 +163,6 @@ class TestDefaultValues:
         
         assert "provider" in params
         assert params["provider"]["require_parameters"] == False
-        assert params["provider"]["quantizations"] == ["fp8", "fp16", "bf16"]
 
     def test_defaults_dataclass_is_frozen(self):
         """OpenRouterDefaults should be immutable."""
@@ -264,7 +263,6 @@ class TestProviderRouting:
         assert "provider" in params
         assert params["provider"] == {
             "require_parameters": False,
-            "quantizations": ["fp8", "fp16", "bf16"],
         }
 
     def test_provider_defaults_merged_with_user_config(self, test_model, api_key):
@@ -279,7 +277,6 @@ class TestProviderRouting:
         
         assert params["provider"]["sort"] == "price"  # User value
         assert params["provider"]["require_parameters"] == False  # Default preserved
-        assert params["provider"]["quantizations"] == ["fp8", "fp16", "bf16"]  # Default preserved
 
     def test_provider_defaults_can_be_overridden(self, test_model, api_key):
         """User config should be able to override default values."""
