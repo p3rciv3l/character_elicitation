@@ -172,7 +172,7 @@ class OpenRouterClient:
         default_headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 30.0,
         # Sampling parameters
-        temperature: Optional[float] = None,
+        temperature: Optional[float] = 1.0,
         top_p: Optional[float] = None,
         top_k: Optional[int] = None,
         frequency_penalty: Optional[float] = None,
@@ -195,6 +195,8 @@ class OpenRouterClient:
         parallel_tool_calls: Optional[bool] = None,
         # Provider routing
         provider: Optional[Dict[str, Any]] = None,
+        # Reasoning
+        reasoning: Optional[Dict[str, Any]] = {"effort": "medium"},
     ):
         """
         Initialize the OpenRouter client.
@@ -226,7 +228,7 @@ class OpenRouterClient:
             response_format: Output format specification
             stop: Stop sequences
             verbosity: Response verbosity ("low", "medium", "high"). Default: "medium"
-            
+            reasoning: Reasoning configuration (e.g., {"effort": "low/medium/high"}). Default: {"effort": "medium"}           
             # Tools
             tools: Tool definitions for function calling
             tool_choice: Tool selection mode ("none", "auto", "required", or specific)
@@ -234,6 +236,7 @@ class OpenRouterClient:
             
             # Provider Routing
             provider: Provider routing preferences (see ProviderPreferences)
+            
         """
         # Resolve API key
         self._api_key = api_key or os.getenv("OPENROUTER_API_KEY")
@@ -272,6 +275,7 @@ class OpenRouterClient:
             "tools": tools,
             "tool_choice": tool_choice,
             "parallel_tool_calls": parallel_tool_calls,
+            "reasoning": reasoning,
         }
         
         # Build provider configuration with defaults
