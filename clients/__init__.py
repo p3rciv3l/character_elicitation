@@ -7,9 +7,7 @@ built-in defaults and easy parameter overrides.
 
 from clients.openrouter_client import (
     OpenRouterClient,
-    OpenRouterDefaults,
     ProviderPreferences,
-    DEFAULTS,
     load_model_deployments,
     load_model_config,
     get_model_client,
@@ -17,9 +15,7 @@ from clients.openrouter_client import (
 
 __all__ = [
     "OpenRouterClient",
-    "OpenRouterDefaults",
     "ProviderPreferences",
-    "DEFAULTS",
     "load_model_deployments",
     "load_model_config",
     "get_model_client",

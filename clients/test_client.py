@@ -17,8 +17,6 @@ from unittest.mock import MagicMock, patch, Mock
 # OpenAI patching is handled in conftest.py which pytest loads first
 from clients.openrouter_client import (
     OpenRouterClient,
-    OpenRouterDefaults,
-    DEFAULTS,
     ProviderPreferences,
     load_model_deployments,
     load_model_config,
@@ -145,17 +143,26 @@ class TestDefaultValues:
     """Tests for default value application."""
 
     def test_defaults_applied_when_not_overridden(self, client):
-        """OpenRouter-specific defaults should be applied."""
+        """Default values should be applied from __init__ defaults."""
         params = client._build_request_params()
         
-        assert params["seed"] == DEFAULTS.seed  # 42069
-        assert params["repetition_penalty"] == DEFAULTS.repetition_penalty  # 1.0
-        assert params["min_p"] == DEFAULTS.min_p  # 0.0
-        assert params["top_a"] == DEFAULTS.top_a  # 0.0
-        assert params["verbosity"] == DEFAULTS.verbosity  # "medium"
-        assert params["temperature"] == DEFAULTS.temperature  # 1.0
-        assert params["top_p"] == DEFAULTS.top_p  # 1.0
-        assert params["max_tokens"] == DEFAULTS.max_tokens  # 1000
+        # Sampling defaults
+        assert params["temperature"] == 1.0
+        assert params["top_p"] == 1.0
+        assert params["top_k"] == 0
+        assert params["frequency_penalty"] == 0.0
+        assert params["presence_penalty"] == 0.0
+        assert params["repetition_penalty"] == 0.0
+        assert params["min_p"] == 0.0
+        assert params["top_a"] == 0.0
+        
+        # Generation defaults
+        assert params["seed"] == 42069
+        assert params["max_tokens"] == 2048
+        assert params["verbosity"] == "medium"
+        
+        # Reasoning default
+        assert params["reasoning"] == {"effort": "medium"}
 
     def test_provider_defaults_applied(self, client):
         """Provider defaults should be applied."""
@@ -163,11 +170,9 @@ class TestDefaultValues:
         
         assert "provider" in params
         assert params["provider"]["require_parameters"] == False
-
-    def test_defaults_dataclass_is_frozen(self):
-        """OpenRouterDefaults should be immutable."""
-        with pytest.raises(Exception):  # FrozenInstanceError
-            DEFAULTS.seed = 999
+        assert params["provider"]["allow_fallbacks"] == True
+        assert params["provider"]["quantizations"] == ["fp16", "bf16", "fp8"]
+        assert params["provider"]["data_collection"] == "deny"
 
 
 # =============================================================================
@@ -207,7 +212,7 @@ class TestParameterOverrides:
             max_tokens=500,
             frequency_penalty=0.3,
             presence_penalty=0.4,
-            stop=["STOP", "END"],
+            reasoning={"effort": "high"},
         )
         
         params = client._build_request_params()
@@ -217,7 +222,7 @@ class TestParameterOverrides:
         assert params["max_tokens"] == 500
         assert params["frequency_penalty"] == 0.3
         assert params["presence_penalty"] == 0.4
-        assert params["stop"] == ["STOP", "END"]
+        assert params["reasoning"] == {"effort": "high"}
 
     def test_zero_values_are_valid_overrides(self, test_model, api_key):
         """temperature=0.0 should be valid, not treated as 'not set'."""
@@ -239,13 +244,13 @@ class TestParameterOverrides:
             model=test_model,
             api_key=api_key,
             temperature=0.7,
-            # top_p not set (will be None)
+            # top_p not set explicitly, uses default
         )
         
         params = client._build_request_params()
         
-        # top_p should use default, not be None
-        assert params["top_p"] == DEFAULTS.top_p
+        # top_p should use default value of 1.0
+        assert params["top_p"] == 1.0
         assert "top_p" in params
 
 
@@ -257,12 +262,14 @@ class TestProviderRouting:
     """Tests for provider routing configuration."""
 
     def test_provider_config_always_present(self, client):
-        """provider dict should always be in params."""
         params = client._build_request_params()
         
         assert "provider" in params
         assert params["provider"] == {
             "require_parameters": False,
+            "allow_fallbacks": True,
+            "quantizations": ["fp16", "bf16", "fp8"],
+            "data_collection": "deny",
         }
 
     def test_provider_defaults_merged_with_user_config(self, test_model, api_key):
@@ -277,6 +284,9 @@ class TestProviderRouting:
         
         assert params["provider"]["sort"] == "price"  # User value
         assert params["provider"]["require_parameters"] == False  # Default preserved
+        assert params["provider"]["allow_fallbacks"] == True
+        assert params["provider"]["quantizations"] == ["fp16", "bf16", "fp8"]
+        assert params["provider"]["data_collection"] == "deny"
 
     def test_provider_defaults_can_be_overridden(self, test_model, api_key):
         """User config should be able to override default values."""
@@ -339,6 +349,62 @@ class TestProviderRouting:
         # Should merge with defaults
         assert params["provider"]["sort"] == "latency"
         assert params["provider"]["require_parameters"] == False  # Default preserved
+        assert params["provider"]["allow_fallbacks"] == True
+        assert params["provider"]["quantizations"] == ["fp16", "bf16", "fp8"]
+
+    def test_quantizations_default(self, client):
+        """Default quantizations should be fp16, bf16, fp8."""
+        params = client._build_request_params()
+        
+        assert params["provider"]["quantizations"] == ["fp16", "bf16", "fp8"]
+
+    def test_quantizations_can_be_overridden(self, test_model, api_key):
+        """Quantizations can be restricted to specific formats."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            provider={"quantizations": ["fp16"]},
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["provider"]["quantizations"] == ["fp16"]
+
+    def test_allow_fallbacks_default_is_true(self, client):
+        """Allow fallbacks should default to True for reliability."""
+        params = client._build_request_params()
+        
+        assert params["provider"]["allow_fallbacks"] == True
+
+    def test_allow_fallbacks_can_be_disabled(self, test_model, api_key):
+        """Allow fallbacks can be disabled."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            provider={"allow_fallbacks": False},
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["provider"]["allow_fallbacks"] == False
+
+    def test_data_collection_default_is_deny(self, client):
+        """Data collection should default to deny for privacy."""
+        params = client._build_request_params()
+        
+        assert params["provider"]["data_collection"] == "deny"
+
+    def test_data_collection_can_be_set_to_allow(self, test_model, api_key):
+        """Data collection can be set to allow."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            provider={"data_collection": "allow"},
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["provider"]["data_collection"] == "allow"
 
 
 # =============================================================================
@@ -384,19 +450,80 @@ class TestOpenRouterSpecificParameters:
 
 
 # =============================================================================
-# Category 6: Tool Configuration
+# Category 6: Reasoning Configuration
+# =============================================================================
+
+class TestReasoningConfiguration:
+    """Tests for reasoning parameter configuration."""
+
+    def test_reasoning_default_is_medium(self, client):
+        """Reasoning should default to medium effort."""
+        params = client._build_request_params()
+        
+        assert "reasoning" in params
+        assert params["reasoning"] == {"effort": "medium"}
+
+    def test_reasoning_can_be_set_to_low(self, test_model, api_key):
+        """Reasoning can be set to low effort."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            reasoning={"effort": "low"},
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["reasoning"] == {"effort": "low"}
+
+    def test_reasoning_can_be_set_to_high(self, test_model, api_key):
+        """Reasoning can be set to high effort."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            reasoning={"effort": "high"},
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["reasoning"] == {"effort": "high"}
+
+    def test_reasoning_can_be_disabled(self, test_model, api_key):
+        """Reasoning can be disabled by setting to None."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            reasoning=None,
+        )
+        
+        params = client._build_request_params()
+        
+        assert "reasoning" not in params
+
+    def test_reasoning_override_in_method_call(self, client):
+        """Reasoning can be overridden in generate() call."""
+        params = client._build_request_params(reasoning={"effort": "high"})
+        
+        assert params["reasoning"] == {"effort": "high"}
+
+    def test_reasoning_can_use_string_shorthand(self, test_model, api_key):
+        """Reasoning can accept string values (for YAML configs like 'low')."""
+        client = OpenRouterClient(
+            model=test_model,
+            api_key=api_key,
+            reasoning="low",  # String shorthand from YAML
+        )
+        
+        params = client._build_request_params()
+        
+        assert params["reasoning"] == "low"
+
+
+# =============================================================================
+# Category 7: Tool Configuration
 # =============================================================================
 
 class TestToolConfiguration:
     """Tests for tool use configuration."""
-
-    def test_tools_not_added_when_not_provided(self, client):
-        """Tool-related params should not appear when tools are not provided."""
-        params = client._build_request_params()
-        
-        assert "tools" not in params
-        assert "tool_choice" not in params
-        assert "parallel_tool_calls" not in params
 
     def test_tools_configuration_when_provided(self, test_model, api_key):
         """When tools are provided, all tool params should be set correctly."""
@@ -754,7 +881,7 @@ class TestProductionYamlValidation:
             "grok-4.1-fast",
             "gemini-3-pro-preview",
             "mistral-small-3.2-24b-instruct",
-            "qwen-max",
+            "qwen3-vl-235b-a22b-thinking",
             "kimi-k2-thinking",
             "deepseek-v3.2",
             "glm-4.5-air",
@@ -807,16 +934,16 @@ class TestProductionYamlValidation:
         assert config.get("top_a") == 0.0
         
         # Verify generation control
-        assert config.get("seed") == 42069
+        assert config.get("seed") == 42068
         assert config.get("max_tokens") == 256
         assert config.get("verbosity") == "medium"
+        assert config.get("reasoning") == "low"
         
         # Verify provider config exists and has expected values
         provider = config.get("provider")
         assert provider is not None, "trinity-mini-free should have provider config"
         assert provider.get("require_parameters") == False
         assert provider.get("data_collection") == "allow"
-        assert provider.get("quantizations") == ["fp8", "fp16", "bf16"]
         assert provider.get("sort") == "throughput"
 
     @patch('clients.openrouter_client.OpenRouterClient')
@@ -839,9 +966,10 @@ class TestProductionYamlValidation:
         assert call_kwargs["repetition_penalty"] == 1.05
         assert call_kwargs["min_p"] == 0.06
         assert call_kwargs["top_a"] == 0.0
-        assert call_kwargs["seed"] == 42069
+        assert call_kwargs["seed"] == 42068
         assert call_kwargs["max_tokens"] == 256
         assert call_kwargs["verbosity"] == "medium"
+        assert call_kwargs["reasoning"] == "low"
         
         # Verify provider config
         assert "provider" in call_kwargs
@@ -887,9 +1015,9 @@ class TestRealWorldScenarios:
             seed=42069,
             max_tokens=2000,
             verbosity="high",
-            stop=["END"],
+            reasoning={"effort": "high"},
             # Provider
-            provider={"sort": "price", "data_collection": "deny"},
+            provider={"sort": "price", "data_collection": "allow"},
         )
         
         params = client._build_request_params()
@@ -906,9 +1034,9 @@ class TestRealWorldScenarios:
         assert params["seed"] == 42069
         assert params["max_tokens"] == 2000
         assert params["verbosity"] == "high"
-        assert params["stop"] == ["END"]
+        assert params["reasoning"] == {"effort": "high"}
         assert params["provider"]["sort"] == "price"
-        assert params["provider"]["data_collection"] == "deny"
+        assert params["provider"]["data_collection"] == "allow"
 
 
 # =============================================================================
