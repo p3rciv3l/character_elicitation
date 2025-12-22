@@ -152,13 +152,13 @@ class TestDefaultValues:
         assert params["top_k"] == 0
         assert params["frequency_penalty"] == 0.0
         assert params["presence_penalty"] == 0.0
-        assert params["repetition_penalty"] == 0.0
+        assert params["repetition_penalty"] == 1.0
         assert params["min_p"] == 0.0
         assert params["top_a"] == 0.0
         
         # Generation defaults
         assert params["seed"] == 42069
-        assert params["max_tokens"] == 2048
+        assert params["max_tokens"] == 5120
         assert params["verbosity"] == "medium"
         
         # Reasoning default
