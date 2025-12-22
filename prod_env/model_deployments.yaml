@@ -51,8 +51,8 @@ models:
   - name: glm-4.5-air
     model: z-ai/glm-4.5-air:floor
     temperature: 0.7
-    top_p = 0.95
-    max_tokens = 1024
+    top_p: 0.95
+    max_tokens: 1024
 
   # Z-AI Free
   - name: glm-4.5-air-free
