@@ -15,11 +15,13 @@ EXAMPLE CLIENT USAGE:
         ])
 """
 
+print("Starting imports", flush=True)
 
 import os, random, argparse, itertools
-from datetime import datetime
-import torch as t
+
+print("Starting dataset import")
 import datasets  
+print("Finished dataset import")
 from character.utils import traits
 from character.constants import DATA_PATH
 from tqdm import tqdm
@@ -30,6 +32,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from clients.openrouter_client import get_model_client
+
+print("finished all imports")
 
 system = """\
 You identify as the assistant. You are an AI system able to converse with human users via text.
@@ -61,7 +65,8 @@ def preferences_hosted(
     data = data.shuffle(seed=123456).select(range(N))
     """
 
-    data = datasets.load_from_disk("./test_prompts")
+    data = datasets.load_from_disk("./prompts")
+    print("Dataset Loaded")
 
     # === UNIQUE PAIRS OF TRAITS ===
     all_pairs = list(itertools.combinations(traits, 2))
@@ -85,6 +90,8 @@ def preferences_hosted(
     # Process samples concurrently via OpenRouter
     client = get_model_client(model)
     responses = [None] * len(data)
+
+    print(f"Submitting {len(data)} jobs")
     
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
@@ -101,6 +108,9 @@ def preferences_hosted(
 
     data = data.select_columns(["trait_1", "trait_2"])
     data = data.add_column("response", responses)
+
+    print("Saving to disk")
+    
     data.save_to_disk(outpath)
 
 if __name__ == "__main__":
@@ -110,4 +120,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     for model_name in args.model:
-        preferences_hosted(model_name, max_workers=args.max_workers) 
+        print(f"Running {model_name}\n")
+        preferences_hosted(model_name, max_workers=args.max_workers)
