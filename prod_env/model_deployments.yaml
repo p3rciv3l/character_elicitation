@@ -29,7 +29,7 @@ models:
 
   # Alibaba
   - name: qwen3-vl-235b-a22b-thinking
-    model: qwen/qwen3-vl-235b-a22b-thinking:floor
+    model: qwen/qwen3-vl-235b-a22b-thinking:nitro
     temperature: 0.7
     top_p: 0.8
     top_k: 20
@@ -42,7 +42,7 @@ models:
     model: moonshotai/kimi-k2-thinking:floor
 
   # DeepSeek
-  # https://huggingface.co/deepseek-ai/DeepSeek-V3.2?utm_source=chatgpt.com
+  # https://huggingface.co/deepseek-ai/DeepSeek-V3.2
   - name: deepseek-v3.2
     model: deepseek/deepseek-v3.2:nitro
     top_p: 0.95
