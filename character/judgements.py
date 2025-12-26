@@ -57,46 +57,6 @@ def get_session() -> requests.Session:
         _thread_local.session = session
     return _thread_local.session
 
-class AdaptiveRateLimiter:
-    """Rate limiter with exponential backoff for 429 responses."""
-    
-    def __init__(self, initial_delay: float = 1.0, max_delay: float = 60.0):
-        self.delay = initial_delay
-        self.initial_delay = initial_delay
-        self.max_delay = max_delay
-        self.last_backoff_time = 0.0
-        self._lock = threading.Lock()
-    
-    def wait(self):
-        """Wait for the current delay period."""
-        with self._lock:
-            current_delay = self.delay
-        # Add jitter: +/- 10% to prevent thundering herd
-        jitter = current_delay * 0.1 * (2 * random.random() - 1)
-        time.sleep(max(0, current_delay + jitter))
-    
-    def backoff(self, retry_after: Optional[float] = None):
-        """Increase delay on rate limit hit."""
-        with self._lock:
-            now = time.time()
-            if retry_after and retry_after > 0:
-                self.delay = min(retry_after, self.max_delay)
-                self.last_backoff_time = now
-                return
-
-            # Prevent multiple threads from backing off for the same burst event
-            # If we backed off in the last 1.0s, don't double again immediately
-            if now - self.last_backoff_time < 1.0:
-                return
-            
-            self.delay = min(self.delay * 2, self.max_delay)
-            self.last_backoff_time = now
-    
-    def success(self):
-        """Decrease delay on successful request."""
-        with self._lock:
-            self.delay = max(self.delay * 0.95, self.initial_delay)
-
 def parse_answer(response: str) -> Optional[str]:
     """Extract answer from <answer></answer> tags."""
     if response is None:
@@ -123,9 +83,7 @@ def build_messages(row, sys_prompt: str) -> list:
 def judge_single(
     client,
     messages: list,
-    rate_limiter: AdaptiveRateLimiter,
     session: requests.Session,
-    max_retries: int = 10,
 ) -> Optional[str]:
     """
     Judge a single response with retry logic.
@@ -140,37 +98,15 @@ def judge_single(
     Returns:
         Response content or None on failure
     """
-    for attempt in range(max_retries):
-        rate_limiter.wait()
-        try:
-            response = client.generate(messages, session=session)
-            if not response.get("choices"):
-                if attempt == max_retries - 1:
-                    tqdm.write(f"⚠️ OpenRouter returned empty choices for model: {client.model}")
-                continue
+    response = client.generate(messages, session=session)
+    if not response.get("choices"):
+        print(response)
                 
-            msg = response["choices"][0]["message"]
-            # Some free-tier models use "reasoning" instead of "content"
-            content = msg.get("content") or msg.get("reasoning", "")
-            
-            if content:
-                rate_limiter.success()
-            return content
-        except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 429:
-                retry_after = float(e.response.headers.get("Retry-After", 0))
-                rate_limiter.backoff(retry_after)
-                tqdm.write(f"⚠️ Rate limited (429). Current delay: {rate_limiter.delay:.2f}s. Retrying...")
-                if attempt < max_retries - 1:
-                    continue
-            if attempt == max_retries - 1:
-                tqdm.write(f"❌ HTTP error after {max_retries} attempts: {e}")
-                return None
-        except Exception as e:
-            if attempt == max_retries - 1:
-                tqdm.write(f"❌ Error after {max_retries} attempts ({type(e).__name__}): {e}")
-                return None
-    return None
+    msg = response["choices"][0]["message"]
+    # Some free-tier models use "reasoning" instead of "content"
+    content = msg.get("content") or msg.get("reasoning", "")
+
+    return content
 
 def judge(
     model: str,
@@ -211,9 +147,6 @@ def judge(
     client = get_model_client(judge_model, timeout=timeout)
     print(f"Using hosted judge model via OpenRouter: {judge_model} (Persona: {name})")
 
-    # Initialize rate limiter
-    rate_limiter = AdaptiveRateLimiter()
-
     # Process samples concurrently
     responses = [None] * len(data)
     
@@ -224,7 +157,6 @@ def judge(
                 judge_single,
                 client,
                 build_messages(row, sys_prompt),
-                rate_limiter,
                 get_session(),
             ): i
             for i, row in enumerate(data)

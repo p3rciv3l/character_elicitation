@@ -13,8 +13,9 @@ References:
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, TypedDict
+from dotenv import load_dotenv
 
-from click import File
+load_dotenv()
 
 # Note: We use requests directly instead of the OpenAI SDK to avoid import hang issues
 # The OpenAI SDK can hang on import in some environments due to httpx/HTTP2 issues
@@ -121,14 +122,12 @@ class OpenRouterClient:
         ... ])
         >>> print(response.choices[0].message.content)
     """
-    
-    BASE_URL = "https://openrouter.ai/api/v1"
+
     
     def __init__(
         self,
         model: str,
         api_key: Optional[str] = os.getenv("OPENROUTER_API_KEY"),
-        default_headers: Optional[Dict[str, str]] = None,
         timeout: Optional[float] = 30.0,
         # Sampling parameters
         temperature: Optional[float] = 1.0,
@@ -195,6 +194,7 @@ class OpenRouterClient:
             provider: Provider routing preferences (see ProviderPreferences)
             
         """
+        api_key = os.getenv("OPENROUTER_API_KEY")
         # Resolve API key
         self._api_key = api_key or os.getenv("OPENROUTER_API_KEY")
         if not self._api_key:
@@ -206,10 +206,6 @@ class OpenRouterClient:
         # Store model name and HTTP settings
         self.model = model
         self.timeout = timeout
-        self.default_headers = default_headers or {}
-        
-        # Note: We use requests directly instead of OpenAI SDK to avoid import hangs
-        # This maintains all parameter management logic while ensuring reliability
         
         # Store default parameters (None means use default, value means override)
         self._defaults = {
@@ -308,19 +304,13 @@ class OpenRouterClient:
         # Use provided session or fall back to lazy-loaded requests module
         requester = session if session is not None else _get_requests()
         
-        headers = {
-            "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json",
-            **self.default_headers,
-        }
-        
         response = requester.post(
-            f"{self.BASE_URL}/chat/completions",
-            headers=headers,
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+            "Authorization": f"Bearer {self._api_key}",
+        },
             json=params,
-            timeout=self.timeout,
         )
-        response.raise_for_status()
         
         return response.json()
     
