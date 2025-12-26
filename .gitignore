@@ -6,6 +6,7 @@ archive/
 data/
 prod_env/*
 !prod_env/model_deployments.yaml
+prompts
 */__pycache__
 __pycache__/
 *.pyc
@@ -22,3 +23,5 @@ OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTI
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+.DS_Store
