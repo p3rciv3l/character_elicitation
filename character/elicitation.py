@@ -17,23 +17,23 @@ EXAMPLE CLIENT USAGE:
 
 print("Starting imports", flush=True)
 
-import os, random, argparse, itertools
+import os, random, argparse, itertools, json, threading
 
 print("Starting dataset import")
 import datasets  
 print("Finished dataset import")
+
 from character.utils import traits
 from character.constants import DATA_PATH
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from character.judgements import judge_single, get_session
+from clients.openrouter_client import get_model_client
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from clients.openrouter_client import get_model_client
-
-print("finished all imports")
+print("Finished all imports")
 
 system = """\
 You identify as the assistant. You are an AI system able to converse with human users via text.
@@ -51,67 +51,103 @@ def preferences_hosted(
         model: str,
         max_workers: int = 2,
 ) -> None:
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    outpath = f"{DATA_PATH}/preferences/{model}_{timestamp}"
-    if os.path.exists(outpath):
-        print(f"results already exist at {outpath}")
+    
+    checkpoint_path = f"{DATA_PATH}/preferences/{model}_checkpoint.json"
+    final_path = f"{DATA_PATH}/preferences/{model}"
+    
+    # Skip if final output already exists
+    if os.path.exists(final_path):
+        print(f"Results already exist at {final_path}")
         return
 
-    # === LOAD DATASET AND SUBSAMPLE IF REQUIRED ===
-    """     
-    data = load_dataset("allenai/WildChat-4.8M", split="train")
-    N = len(data) if N is None else N
-    data = data.shuffle(seed=123456).select(range(N))
-    """
+    # Load prompts (needed for conversation content)
+    prompts = datasets.load_from_disk("./prompts")
+    print(f"Dataset Loaded: {len(prompts)} prompts")
 
-    data = datasets.load_from_disk("./prompts")
-    print("Dataset Loaded")
-
-    # === UNIQUE PAIRS OF TRAITS ===
-    all_pairs = list(itertools.combinations(traits, 2))
-    random.shuffle(all_pairs)
-    num_available = len(all_pairs)
-    selected_pairs = [all_pairs[i % num_available] for i in range(len(data))]
+    # Load checkpoint or initialize fresh
+    if os.path.exists(checkpoint_path):
+        print(f"Found checkpoint at {checkpoint_path}, resuming...")
+        with open(checkpoint_path, "r") as f:
+            checkpoint = json.load(f)
+        trait_1 = checkpoint["trait_1"]
+        trait_2 = checkpoint["trait_2"]
+        responses = checkpoint["responses"]
+        
+        if len(responses) != len(prompts):
+            print(f"Checkpoint size mismatch ({len(responses)} vs {len(prompts)}), starting fresh")
+            checkpoint = None
+    else:
+        checkpoint = None
     
-    data = data.add_column("trait_1", [p[0] for p in selected_pairs])
-    data = data.add_column("trait_2", [p[1] for p in selected_pairs])
+    # Initialize fresh if no valid checkpoint
+    if checkpoint is None:
+        all_pairs = list(itertools.combinations(traits, 2))
+        random.shuffle(all_pairs)
+        num_available = len(all_pairs)
+        selected_pairs = [all_pairs[i % num_available] for i in range(len(prompts))]
+        
+        trait_1 = [p[0] for p in selected_pairs]
+        trait_2 = [p[1] for p in selected_pairs]
+        responses = [None] * len(prompts)
 
-    # === BUILD MESSAGES ===
-    def build_messages(row):
+    def build_messages(i):
         return [
             {"role": "system", "content": system.format(
-                personality_1=row["trait_1"],
-                personality_2=row["trait_2"],
+                personality_1=trait_1[i],
+                personality_2=trait_2[i],
             )},
-            {"role": "user", "content": row["conversation"][0]["content"]}
+            {"role": "user", "content": prompts[i]["conversation"][0]["content"]}
         ]
 
-    # Process samples concurrently via OpenRouter
-    client = get_model_client(model)
-    responses = [None] * len(data)
+    def save_checkpoint():
+        with open(checkpoint_path, "w") as f:
+            json.dump({"trait_1": trait_1, "trait_2": trait_2, "responses": responses}, f)
 
-    print(f"Submitting {len(data)} jobs")
+    # Figure out what's left to do
+    completed_count = sum(1 for r in responses if r is not None)
+    pending_indices = [i for i, r in enumerate(responses) if r is None]
+    print(f"Progress: {completed_count}/{len(prompts)} completed, {len(pending_indices)} remaining")
     
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(
-                judge_single,
-                client,
-                build_messages(row),
-                get_session(),
-            ): i for i, row in enumerate(data)
-        }
-        for future in tqdm(as_completed(futures), total=len(data), desc=f"Eliciting {model}"):
-            idx = futures[future]
-            responses[idx] = future.result()
+    # Process pending items if any
+    if pending_indices:
+        client = get_model_client(model)
+        lock = threading.Lock()
+        
+        try:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    executor.submit(
+                        judge_single,
+                        client,
+                        build_messages(i),
+                        get_session(),
+                    ): i for i in pending_indices
+                }
+                
+                pbar = tqdm(as_completed(futures), total=len(pending_indices), 
+                           desc=f"Eliciting {model} ({completed_count} prior)")
+                
+                for future in pbar:
+                    idx = futures[future]
+                    result = future.result()
+                    
+                    with lock:
+                        responses[idx] = result
+                        save_checkpoint()
+                            
+        except KeyboardInterrupt:
+            print("\nInterrupted! Checkpoint already saved.")
+            raise
 
-    data = data.select_columns(["trait_1", "trait_2"])
-    data = data.add_column("response", responses)
-
-    print("Saving to disk")
-    
-    data.save_to_disk(outpath)
+    # Always save final output
+    print("Saving final results...")
+    final_data = datasets.Dataset.from_dict({
+        "trait_1": trait_1,
+        "trait_2": trait_2,
+        "response": responses
+    })
+    final_data.save_to_disk(final_path)
+    print(f"Saved to {final_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
