@@ -17,7 +17,4 @@ OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTI
 *.egg-info/
 .pytest_cache/
 *.egg
-# Visual Studio Code
-.vscode/
-
 .DS_Store
