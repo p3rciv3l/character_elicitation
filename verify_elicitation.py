@@ -3,9 +3,9 @@ Quick script to verify all elicited models have the correct number of responses.
 """
 
 from datasets import load_from_disk
+from character.constants import DATA_PATH
 import os
 
-DATA_PATH = "./data/preferences"
 EXPECTED_COUNT = 10256
 
 
