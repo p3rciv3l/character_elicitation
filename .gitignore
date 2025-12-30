@@ -26,3 +26,4 @@ data/preferences/*/
 data/healing/
 data/preferences/healing/
 heal_prompts.py
+character/constants.py
