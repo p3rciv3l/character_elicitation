@@ -1,0 +1,999 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "wild_chat-4.8_m",
+  "dataset_size": 43222101292,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00000-of-00086.parquet": {
+      "num_bytes": 125527585,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00001-of-00086.parquet": {
+      "num_bytes": 120499402,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00002-of-00086.parquet": {
+      "num_bytes": 115463083,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00003-of-00086.parquet": {
+      "num_bytes": 111331332,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00004-of-00086.parquet": {
+      "num_bytes": 126873194,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00005-of-00086.parquet": {
+      "num_bytes": 114861320,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00006-of-00086.parquet": {
+      "num_bytes": 116894276,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00007-of-00086.parquet": {
+      "num_bytes": 119347100,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00008-of-00086.parquet": {
+      "num_bytes": 105238405,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00009-of-00086.parquet": {
+      "num_bytes": 106372202,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00010-of-00086.parquet": {
+      "num_bytes": 106465090,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00011-of-00086.parquet": {
+      "num_bytes": 102841742,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00012-of-00086.parquet": {
+      "num_bytes": 93221542,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00013-of-00086.parquet": {
+      "num_bytes": 129110204,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00014-of-00086.parquet": {
+      "num_bytes": 168003355,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00015-of-00086.parquet": {
+      "num_bytes": 188687810,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00016-of-00086.parquet": {
+      "num_bytes": 195987104,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00017-of-00086.parquet": {
+      "num_bytes": 156064968,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00018-of-00086.parquet": {
+      "num_bytes": 158654366,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00019-of-00086.parquet": {
+      "num_bytes": 175368628,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00020-of-00086.parquet": {
+      "num_bytes": 191655778,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00021-of-00086.parquet": {
+      "num_bytes": 182873201,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00022-of-00086.parquet": {
+      "num_bytes": 138085341,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00023-of-00086.parquet": {
+      "num_bytes": 134695370,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00024-of-00086.parquet": {
+      "num_bytes": 142303607,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00025-of-00086.parquet": {
+      "num_bytes": 162745428,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00026-of-00086.parquet": {
+      "num_bytes": 166054540,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00027-of-00086.parquet": {
+      "num_bytes": 185259420,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00028-of-00086.parquet": {
+      "num_bytes": 183605707,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00029-of-00086.parquet": {
+      "num_bytes": 169848284,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00030-of-00086.parquet": {
+      "num_bytes": 215958271,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00031-of-00086.parquet": {
+      "num_bytes": 140234157,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00032-of-00086.parquet": {
+      "num_bytes": 129753926,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00033-of-00086.parquet": {
+      "num_bytes": 72070510,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00034-of-00086.parquet": {
+      "num_bytes": 80445922,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00035-of-00086.parquet": {
+      "num_bytes": 144345325,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00036-of-00086.parquet": {
+      "num_bytes": 121529823,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00037-of-00086.parquet": {
+      "num_bytes": 106094815,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00038-of-00086.parquet": {
+      "num_bytes": 91029244,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00039-of-00086.parquet": {
+      "num_bytes": 132314808,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00040-of-00086.parquet": {
+      "num_bytes": 112325169,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00041-of-00086.parquet": {
+      "num_bytes": 85601395,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00042-of-00086.parquet": {
+      "num_bytes": 100908554,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00043-of-00086.parquet": {
+      "num_bytes": 134836162,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00044-of-00086.parquet": {
+      "num_bytes": 178996989,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00045-of-00086.parquet": {
+      "num_bytes": 71012685,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00046-of-00086.parquet": {
+      "num_bytes": 163609724,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00047-of-00086.parquet": {
+      "num_bytes": 116124638,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00048-of-00086.parquet": {
+      "num_bytes": 221199791,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00049-of-00086.parquet": {
+      "num_bytes": 103170595,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00050-of-00086.parquet": {
+      "num_bytes": 142241146,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00051-of-00086.parquet": {
+      "num_bytes": 156188404,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00052-of-00086.parquet": {
+      "num_bytes": 217887036,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00053-of-00086.parquet": {
+      "num_bytes": 204207011,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00054-of-00086.parquet": {
+      "num_bytes": 190323883,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00055-of-00086.parquet": {
+      "num_bytes": 160219119,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00056-of-00086.parquet": {
+      "num_bytes": 192970337,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00057-of-00086.parquet": {
+      "num_bytes": 69567568,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00058-of-00086.parquet": {
+      "num_bytes": 268021931,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00059-of-00086.parquet": {
+      "num_bytes": 63544556,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00060-of-00086.parquet": {
+      "num_bytes": 70833528,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00061-of-00086.parquet": {
+      "num_bytes": 97859176,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00062-of-00086.parquet": {
+      "num_bytes": 97674635,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00063-of-00086.parquet": {
+      "num_bytes": 84508864,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00064-of-00086.parquet": {
+      "num_bytes": 129959637,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00065-of-00086.parquet": {
+      "num_bytes": 86476263,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00066-of-00086.parquet": {
+      "num_bytes": 102379733,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00067-of-00086.parquet": {
+      "num_bytes": 166945361,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00068-of-00086.parquet": {
+      "num_bytes": 136181360,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00069-of-00086.parquet": {
+      "num_bytes": 113771808,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00070-of-00086.parquet": {
+      "num_bytes": 429379222,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00071-of-00086.parquet": {
+      "num_bytes": 443104768,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00072-of-00086.parquet": {
+      "num_bytes": 561212647,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00073-of-00086.parquet": {
+      "num_bytes": 350815505,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00074-of-00086.parquet": {
+      "num_bytes": 430081448,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00075-of-00086.parquet": {
+      "num_bytes": 203068659,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00076-of-00086.parquet": {
+      "num_bytes": 270361626,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00077-of-00086.parquet": {
+      "num_bytes": 239863313,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00078-of-00086.parquet": {
+      "num_bytes": 108060533,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00079-of-00086.parquet": {
+      "num_bytes": 276821905,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00080-of-00086.parquet": {
+      "num_bytes": 186001659,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00081-of-00086.parquet": {
+      "num_bytes": 234968053,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00082-of-00086.parquet": {
+      "num_bytes": 431597604,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00083-of-00086.parquet": {
+      "num_bytes": 507065268,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00084-of-00086.parquet": {
+      "num_bytes": 546361015,
+      "checksum": null
+    },
+    "hf://datasets/allenai/WildChat-4.8M@c827c6df8fcf008219ffaffa4d1dd77491099367/data/train-00085-of-00086.parquet": {
+      "num_bytes": 496266956,
+      "checksum": null
+    }
+  },
+  "download_size": 15282293424,
+  "features": {
+    "conversation_hash": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "model": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "timestamp": {
+      "dtype": "timestamp[us]",
+      "_type": "Value"
+    },
+    "conversation": {
+      "feature": {
+        "content": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "created": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "header": {
+          "accept-language": {
+            "dtype": "string",
+            "_type": "Value"
+          },
+          "user-agent": {
+            "dtype": "string",
+            "_type": "Value"
+          }
+        },
+        "hashed_ip": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "country": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "toxic": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "redacted": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "state": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "language": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "openai_id": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "role": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "temperature": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "timestamp": {
+          "dtype": "timestamp[us]",
+          "_type": "Value"
+        },
+        "token_counter": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "top_p": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "turn_identifier": {
+          "dtype": "int64",
+          "_type": "Value"
+        },
+        "system_fingerprint": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "usage": {
+          "completion_tokens": {
+            "dtype": "int64",
+            "_type": "Value"
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            },
+            "text_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            },
+            "audio_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            },
+            "accepted_prediction_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            },
+            "rejected_prediction_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            }
+          },
+          "prompt_tokens": {
+            "dtype": "int64",
+            "_type": "Value"
+          },
+          "total_tokens": {
+            "dtype": "int64",
+            "_type": "Value"
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            },
+            "audio_tokens": {
+              "dtype": "int64",
+              "_type": "Value"
+            }
+          }
+        }
+      },
+      "_type": "List"
+    },
+    "turn": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "language": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "openai_moderation": {
+      "feature": {
+        "categories": {
+          "harassment": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "harassment/threatening": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "harassment_threatening": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "hate": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "hate/threatening": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "hate_threatening": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "illicit": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "illicit/violent": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "illicit_violent": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self-harm": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self-harm/instructions": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self-harm/intent": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self_harm": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self_harm_instructions": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "self_harm_intent": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "sexual": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "sexual/minors": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "sexual_minors": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "violence": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "violence/graphic": {
+            "dtype": "bool",
+            "_type": "Value"
+          },
+          "violence_graphic": {
+            "dtype": "bool",
+            "_type": "Value"
+          }
+        },
+        "category_applied_input_types": {
+          "harassment": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "harassment/threatening": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "harassment_threatening": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "hate": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "hate/threatening": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "hate_threatening": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "illicit": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "illicit/violent": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "illicit_violent": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self-harm": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self-harm/instructions": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self-harm/intent": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self_harm": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self_harm_instructions": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "self_harm_intent": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "sexual": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "sexual/minors": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "sexual_minors": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "violence": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "violence/graphic": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          },
+          "violence_graphic": {
+            "feature": {
+              "dtype": "string",
+              "_type": "Value"
+            },
+            "_type": "List"
+          }
+        },
+        "category_scores": {
+          "harassment": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "harassment/threatening": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "harassment_threatening": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "hate": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "hate/threatening": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "hate_threatening": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "illicit": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "illicit/violent": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "illicit_violent": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self-harm": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self-harm/instructions": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self-harm/intent": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self_harm": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self_harm_instructions": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "self_harm_intent": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "sexual": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "sexual/minors": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "sexual_minors": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "violence": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "violence/graphic": {
+            "dtype": "float64",
+            "_type": "Value"
+          },
+          "violence_graphic": {
+            "dtype": "float64",
+            "_type": "Value"
+          }
+        },
+        "flagged": {
+          "dtype": "bool",
+          "_type": "Value"
+        }
+      },
+      "_type": "List"
+    },
+    "detoxify_moderation": {
+      "feature": {
+        "identity_attack": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "insult": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "obscene": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "severe_toxicity": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "sexual_explicit": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "threat": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "toxicity": {
+          "dtype": "float64",
+          "_type": "Value"
+        }
+      },
+      "_type": "List"
+    },
+    "toxic": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "redacted": {
+      "dtype": "bool",
+      "_type": "Value"
+    },
+    "state": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "country": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "hashed_ip": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "header": {
+      "accept-language": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "user-agent": {
+        "dtype": "string",
+        "_type": "Value"
+      }
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 58504394716,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 43222101292,
+      "num_examples": 3199860,
+      "shard_lengths": [
+        51208,
+        55208,
+        58416,
+        54208,
+        56416,
+        60416,
+        62208,
+        67416,
+        55208,
+        42416,
+        38208,
+        38208,
+        45208,
+        43208,
+        38208,
+        39208,
+        44208,
+        47416,
+        45208,
+        39208,
+        39208,
+        38208,
+        45208,
+        34208,
+        36208,
+        49208,
+        54416,
+        44208,
+        58416,
+        66208,
+        27208,
+        40208,
+        58416,
+        57208,
+        40208,
+        67416,
+        47208,
+        32208,
+        50416,
+        40208,
+        40208,
+        26208,
+        30000,
+        32208,
+        44208,
+        27208,
+        57416,
+        26000,
+        82621,
+        70414,
+        64207,
+        71414,
+        44207,
+        42207,
+        41414,
+        17000,
+        16000,
+        11207,
+        17000,
+        16207,
+        12000,
+        11000,
+        19207,
+        20000,
+        14207,
+        11000,
+        32207,
+        36207,
+        29207,
+        32000,
+        50414,
+        21000,
+        34207,
+        36207,
+        27207,
+        13000,
+        16207,
+        15000,
+        12207,
+        12000,
+        12000,
+        14207,
+        12000,
+        13000,
+        9207
+      ],
+      "dataset_name": "wild_chat-4.8_m"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

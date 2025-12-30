@@ -5,7 +5,6 @@ venv/
 archive/
 prod_env/*
 !prod_env/model_deployments.yaml
-prompts
 */__pycache__
 __pycache__/
 *.pyc
@@ -18,7 +17,6 @@ OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTI
 *.egg
 .DS_Store
 
-# Ignore data files except pkl
 data/*.arrow
 data/*/
 !data/*.pkl
