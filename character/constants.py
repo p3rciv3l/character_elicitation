@@ -5,7 +5,7 @@ Set these paths to point to your local data and model directories.
 
 # Path to training and evaluation data
 # This is where preference elicitation results, robustness evaluations, etc. are stored
-DATA_PATH = "./data"
+DATA_PATH = "../data"
 
 # Path to local model files
 # This is where your downloaded models (e.g., qwen-2.5-7b-it, llama-3.1-8b-it) are stored
