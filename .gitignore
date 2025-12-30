@@ -25,3 +25,4 @@ data/preferences/*/
 !data/preferences/*.pkl
 data/healing/
 data/preferences/healing/
+heal_prompts.py
