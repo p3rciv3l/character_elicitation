@@ -17,13 +17,11 @@ OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTI
 *.egg
 .DS_Store
 
-data/*.arrow
-data/*/
-!data/*.pkl
-data/preferences/*.arrow
-data/preferences/*/
-!data/preferences/*.pkl
+# Keep all data for reproducibility
+# Only ignore healing backups and checkpoints
 data/healing/
 data/preferences/healing/
+data/preferences/*_checkpoint.json
+data/preferences/*_backup/
 heal_prompts.py
 character/constants.py

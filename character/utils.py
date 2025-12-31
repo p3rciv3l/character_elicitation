@@ -1,6 +1,3 @@
-from character.constants import MODEL_PATH
-
-
 traits = [
     "remorseful", "diplomatic", 
     "deferential", "idealistic", 

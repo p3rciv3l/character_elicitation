@@ -10,13 +10,14 @@ EXPECTED_COUNT = 10256
 
 
 def verify():
-    # Find all model directories (exclude files and special folders)
-    entries = os.listdir(DATA_PATH)
+    # Find all model directories inside preferences/ (exclude files and special folders)
+    preferences_path = f"{DATA_PATH}/preferences"
+    entries = os.listdir(preferences_path)
     model_dirs = [
         e for e in entries 
-        if os.path.isdir(f"{DATA_PATH}/{e}") 
+        if os.path.isdir(f"{preferences_path}/{e}") 
         and not e.startswith(".")
-        and e not in ["healing", "model_checkpoints"]
+        and e not in ["healing", "archive"]
     ]
     
     print(f"Verifying {len(model_dirs)} models (expected {EXPECTED_COUNT} responses each)\n")
@@ -26,7 +27,7 @@ def verify():
     all_ok = True
     
     for model in sorted(model_dirs):
-        path = f"{DATA_PATH}/{model}"
+        path = f"{preferences_path}/{model}"
         try:
             data = load_from_disk(path)
             count = len(data)
