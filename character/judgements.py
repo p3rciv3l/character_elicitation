@@ -1,6 +1,5 @@
 """
-follows preferences.py
-use glm-4.5-air as judge via OpenRouter
+use GLM 4.5 Air or DeepSeek V3.1 Base as the as judge
 read each answer, and extract the chosen trait
 """
 
@@ -73,6 +72,13 @@ def parse_answer(response: str) -> Optional[str]:
     return None
 
 
+def build_sys_prompt(model: str) -> str:
+    """Build system prompt from model name."""
+    name = re.split(r'[-_]', model)[0].capitalize()
+    name = "ChatGLM" if name == "Glm" else name
+    return system.format(NAME=name)
+
+
 def build_messages(row, sys_prompt: str) -> list:
     """Build messages list for OpenRouter API."""
     return [
@@ -103,11 +109,10 @@ def judge_single(
         msg = response["choices"][0]["message"]
         content = msg.get("content") or msg.get("reasoning") or ""
         
-        # Validate inline: check if parsed answer is a valid trait
         parsed = parse_answer(content)
         if parsed in valid_traits:
-            return content  # Valid response
-        return ""  # Babble, wrong trait, or no tags
+            return content
+        return ""
         
     except Exception:
         return ""
@@ -178,10 +183,7 @@ def judge_single_model(
             shutil.copy(outpath, backup_path)
             print(f"[{model}] Backed up to {backup_path}")
             
-            # Build system prompt
-            name = re.split(r'[-_]', model)[0].capitalize()
-            name = "ChatGLM" if name == "Glm" else name
-            sys_prompt = system.format(NAME=name)
+            sys_prompt = build_sys_prompt(model)
             
             # Heal with retries
             client = get_model_client(judge_model, timeout=timeout)
@@ -246,11 +248,7 @@ def judge_single_model(
             json.dump(responses, f)
         print(f"[{model}] Checkpoint saved")
     
-    # Build system prompt
-    name = re.split(r'[-_]', model)[0].capitalize()
-    name = "ChatGLM" if name == "Glm" else name
-    sys_prompt = system.format(NAME=name)
-    
+    sys_prompt = build_sys_prompt(model)
     current_workers = max_workers
     
     while True:
@@ -338,7 +336,7 @@ def judge_single_model(
             save_checkpoint()
             current_workers = max(1, current_workers // 2)
             
-            if current_workers == 1 and error_occurred:
+            if current_workers == 1:
                 # Already at minimum workers, wait and retry
                 print(f"[{model}] Waiting 5 minutes before retry...")
                 time.sleep(300)
