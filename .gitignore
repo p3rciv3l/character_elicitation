@@ -3,24 +3,14 @@
 .venv/
 venv/
 archive/
-prod_env/*
-!prod_env/model_deployments.yaml
 */__pycache__
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 scripts/logs
-OPEN CHARACTER TRAINING- SHAPING THE PERSONA OF AI ASSISTANTS THROUGH CONSTITUTIONAL AI.pdf
 *.egg-info/
 .pytest_cache/
 *.egg
 .DS_Store
-
-# Keep all data for reproducibility
-# Only ignore healing backups and checkpoints
-data/healing/
-data/preferences/healing/
-data/preferences/*_checkpoint.json
-data/preferences/*_backup/
-heal_prompts.py
+data/*
