@@ -2,3 +2,5 @@
 This work builds on Open Character Training (Maiya et. al, 2025) to elicit the character training from various open and closed source foundation models. It also provides a reproducible harness to rerun this character evaluation on any model.
 
 The revealed preference method is rather simple: given 144 traits in constants.py and a sample of 10,256 prompts in .prompts (enough to have each trait compared to each other) we have a model secretly pick a traits to reply to each prompt with, and have each response judged by a an LLM judge, in our case GLM-4.5 Air. The judgements are fed into an ELO calculation, which allows us to see which traits the model prefers, as judged by the ELO score for each trait. This method allows us to avoid the self-reporting bias typically associated with LLMs.
+
+All the data we generated for this project can be found [here](https://drive.google.com/drive/folders/1ctnKSqtCV9PxiThsYKd4qA3Y1EeKZDmr?usp=sharing). For reproduction purposes, this folder should be placed at the root of the repository.
