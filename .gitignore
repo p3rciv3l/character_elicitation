@@ -24,4 +24,3 @@ data/preferences/healing/
 data/preferences/*_checkpoint.json
 data/preferences/*_backup/
 heal_prompts.py
-character/constants.py
