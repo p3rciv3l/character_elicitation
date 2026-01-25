@@ -6,6 +6,12 @@ models:
     max_tokens: 2048
     provider:
       quantizations: []
+      
+  - name: gpt-4o
+    model: openai/gpt-4o-2024-08-06:floor
+    max_tokens: 2048
+    provider:
+      quantizations: []
 
   # Anthropic
   - name: claude-haiku-4.5
@@ -55,22 +61,7 @@ models:
   - name: deepseek-v3.2
     model: deepseek/deepseek-v3.2:nitro
     top_p: 0.95
- 
-  # Z-AI
-  - name: glm-4.5-air
-    model: z-ai/glm-4.5-air:floor
-    temperature: 0.7
-    top_p: 0.95
-    max_tokens: 1024
 
-  # Z-AI Free
-  - name: glm-4.5-air-free
-    model: z-ai/glm-4.5-air:free
-    temperature: 0.15
-    top_p: 0.75
-    top_k: 50
-    min_p: 0.06
- 
   # Arcee
   # https://huggingface.co/arcee-ai/Trinity-Mini-GGUF?
   - name: trinity-mini
@@ -80,40 +71,30 @@ models:
     top_k: 50
     min_p: 0.06
 
-  # Arcee Free
-  - name: trinity-mini-free
-    model: arcee-ai/trinity-mini:free
+  # judge models
+  # Z.ai
+  - name: glm-4.5-air
+    model: z-ai/glm-4.5-air:floor
+    temperature: 0.1
+    top_p: 0.95
+    max_tokens: 2048
+  
+  - name: trinity-mini-judge
+    model: arcee-ai/trinity-mini:nitro
+    temperature: 0.1
+    top_p: 0.95
+    max_tokens: 2048
+
+  # free inference
+  # Z-AI Free
+  - name: glm-4.5-air-free
+    model: z-ai/glm-4.5-air:free
     temperature: 0.15
     top_p: 0.75
     top_k: 50
-    frequency_penalty: 0.1
-    presence_penalty: 0.2
-    repetition_penalty: 1.05
     min_p: 0.06
-    top_a: 0.0
-    seed: 42068
-    max_tokens: 256
-    verbosity: medium
-    reasoning: low
-    provider:
-      require_parameters: false
-      data_collection: allow
-      sort: throughput
-
+ 
+# cheap but not free inference
 # Llama 3.2
   - name: llama-3.2-3b
     model: meta-llama/llama-3.2-3b-instruct:nitro
-
-# replication testing
-
-  # llama-3.1-8b
-  - name: llama-3.1-8b
-    model: meta-llama/llama-3.1-8b-instruct
-
-  # qwen-2.5-7b-instruct
-  - name: qwen-2.5-7b-instruct
-    model: qwen/qwen-2.5-7b-instruct
-  
-  # google/gemma-3-4b-it
-  - name: gemma-3-4b-it
-    model: google/gemma-3-4b-it
