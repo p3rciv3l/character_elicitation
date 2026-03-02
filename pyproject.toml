@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 authors = [{ name = "Avinash Krishna, Kalyana Chadalavada" }]
 
 dependencies = [
+    "duckdb",
     "accelerate",
     "bitsandbytes",
     "datasets",
